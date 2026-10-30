@@ -13,7 +13,7 @@ import uuid
 
 from PIL import Image, ImageDraw
 
-from integrations.ports import GeneratedImage, GenerationPort, ModelTask
+from integrations.ports import AccountCredits, GeneratedImage, GenerationPort, ModelTask
 
 _SAMPLE_GLB_URL = (
     "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/"
@@ -75,3 +75,6 @@ class StubGenerationAdapter(GenerationPort):
         if time.monotonic() - started < _MODEL_SECONDS:
             return ModelTask(status="processing")
         return ModelTask(status="success", file_url=_SAMPLE_GLB_URL, cost=0)
+
+    def get_credits(self) -> AccountCredits:
+        return AccountCredits(balance=20.0, total_spent=0.0)

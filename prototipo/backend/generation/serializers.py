@@ -26,3 +26,10 @@ class ModelStatusSerializer(serializers.Serializer):
     glb_url = serializers.CharField()
     cost = serializers.FloatField(allow_null=True)
     error = serializers.CharField()
+
+
+class CreditsSerializer(serializers.Serializer):
+    """Provider account, in USD."""
+
+    balance = serializers.FloatField()
+    total_spent = serializers.FloatField()

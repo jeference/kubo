@@ -28,6 +28,14 @@ class ModelTask:
     error: str = ""
 
 
+@dataclass(frozen=True)
+class AccountCredits:
+    """Provider account, in USD."""
+
+    balance: float
+    total_spent: float
+
+
 class GenerationPort(ABC):
     @abstractmethod
     def generate_images(self, *, prompt: str, count: int, size: int) -> list[GeneratedImage]:
@@ -40,6 +48,10 @@ class GenerationPort(ABC):
     @abstractmethod
     def get_model(self, *, task_id: str) -> ModelTask:
         """Current state of a 3D task started by `submit_model`."""
+
+    @abstractmethod
+    def get_credits(self) -> AccountCredits:
+        """Remaining balance and all-time spend of the provider account."""
 
 
 @cache

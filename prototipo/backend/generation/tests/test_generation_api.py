@@ -90,3 +90,10 @@ def test_unknown_model(client):
     response = client.get(f"/api/generation/models/{uuid.uuid4()}/")
 
     assert response.status_code == 404
+
+
+def test_credits(client):
+    response = client.get("/api/generation/credits/")
+
+    assert response.status_code == 200
+    assert response.data == {"balance": 20.0, "total_spent": 0.0}

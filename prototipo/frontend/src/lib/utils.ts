@@ -9,7 +9,7 @@ export function cn(...inputs: ClassValue[]): string {
 const usd = new Intl.NumberFormat("pt-BR", {
   style: "currency",
   currency: "USD",
-  minimumFractionDigits: 4,
+  minimumFractionDigits: 2,
   maximumFractionDigits: 4,
 });
 

@@ -14,7 +14,7 @@ import structlog
 from django.conf import settings
 
 from common.exceptions import UpstreamUnavailable
-from integrations.ports import GeneratedImage, GenerationPort, ModelTask
+from integrations.ports import AccountCredits, GeneratedImage, GenerationPort, ModelTask
 
 _BASE_URL = "https://api.runware.ai/v1"
 _TIMEOUT_SECONDS = 90
@@ -130,3 +130,21 @@ class RunwareGenerationAdapter(GenerationPort):
         if item.get("status") == "error":
             return ModelTask(status="error", error=item.get("message", "Falha ao gerar o modelo."))
         return ModelTask(status="processing")
+
+    def get_credits(self) -> AccountCredits:
+        data = self._run(
+            {
+                "taskType": "accountManagement",
+                "taskUUID": str(uuid.uuid4()),
+                "operation": "getDetails",
+            },
+            "get_credits",
+        )
+        if not data:
+            raise UpstreamUnavailable("Runware não retornou os dados da conta.")
+        balance = data[0].get("balance")
+        # The live API returns a plain number; the docs describe {"amount", "currency"}.
+        if isinstance(balance, dict):
+            balance = balance.get("amount")
+        total = ((data[0].get("usage") or {}).get("total") or {}).get("credits")
+        return AccountCredits(balance=float(balance or 0), total_spent=float(total or 0))

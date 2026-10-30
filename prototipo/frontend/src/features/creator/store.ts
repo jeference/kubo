@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 
-import type { CostEntry, ImageRound, Step, StoredImage } from "@/features/creator/types";
+import type { ImageRound, Step, StoredImage } from "@/features/creator/types";
 
 type CreatorState = {
   step: Step;
@@ -12,13 +12,14 @@ type CreatorState = {
   /** The image the 3D model is built from (generated or uploaded). */
   baseImage: StoredImage | null;
   modelId: string | null;
-  costs: CostEntry[];
+  /** USD spent since the page was opened (sum of the costs Runware reports per call). */
+  sessionSpend: number;
 
   setStep: (step: Step) => void;
   setPrompt: (prompt: string) => void;
   addRound: (round: ImageRound) => void;
   startModel: (modelId: string, image: StoredImage) => void;
-  addCost: (label: string, value: number | null) => void;
+  addSpend: (value: number | null) => void;
   reset: () => void;
 };
 
@@ -28,7 +29,7 @@ const initialState = {
   rounds: [],
   baseImage: null,
   modelId: null,
-  costs: [],
+  sessionSpend: 0,
 };
 
 export const useCreatorStore = create<CreatorState>()((set) => ({
@@ -38,10 +39,10 @@ export const useCreatorStore = create<CreatorState>()((set) => ({
   setPrompt: (prompt) => set({ prompt }),
   addRound: (round) => set((state) => ({ rounds: [...state.rounds, round] })),
   startModel: (modelId, baseImage) => set({ modelId, baseImage, step: "model" }),
-  addCost: (label, value) => {
-    if (value === null || value === undefined) return;
-    set((state) => ({ costs: [...state.costs, { label, value }] }));
+  addSpend: (value) => {
+    if (!value) return;
+    set((state) => ({ sessionSpend: state.sessionSpend + value }));
   },
-  // Costs survive a restart: they track the whole testing session.
-  reset: () => set((state) => ({ ...initialState, costs: state.costs })),
+  // Spend survives a restart: it tracks the whole testing session.
+  reset: () => set((state) => ({ ...initialState, sessionSpend: state.sessionSpend })),
 }));

@@ -19,7 +19,8 @@ export type ImageRound = {
   images: StoredImage[];
 };
 
-export type CostEntry = {
-  label: string;
-  value: number;
+/** Runware account, in USD. */
+export type Credits = {
+  balance: number;
+  total_spent: number;
 };

@@ -6,6 +6,7 @@ from rest_framework.views import APIView
 from generation import services
 from generation.serializers import (
     CreateModelSerializer,
+    CreditsSerializer,
     GenerateImagesSerializer,
     ImageFileSerializer,
     ModelStatusSerializer,
@@ -45,3 +46,8 @@ class ModelDetailView(APIView):
     def get(self, request, id):
         model = services.get_model(task_id=id)
         return Response(ModelStatusSerializer(model).data)
+
+
+class CreditsView(APIView):
+    def get(self, request):
+        return Response(CreditsSerializer(services.get_credits()).data)

@@ -4,18 +4,15 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { useCreatorStore } from "@/features/creator/store";
-import type { ModelStatus, StoredImage } from "@/features/creator/types";
+import type { Credits, ModelStatus, StoredImage } from "@/features/creator/types";
 import { api } from "@/lib/api";
 
 const POLL_INTERVAL_MS = 2_000;
 
 const qk = {
   model: (modelId: string) => ["model", modelId] as const,
+  credits: () => ["credits"] as const,
 };
-
-function addCost(label: string, value: number | null) {
-  useCreatorStore.getState().addCost(label, value);
-}
 
 export const GENERATE_IMAGES_KEY = ["generate-images"];
 
@@ -29,10 +26,7 @@ export function useGenerateImages() {
     mutationFn: (prompt: string) => api.post<StoredImage[]>("/api/generation/images/", { prompt }),
     onSuccess: (images, prompt) => {
       const store = useCreatorStore.getState();
-      store.addCost(
-        `${images.length} imagens`,
-        images.reduce((sum, image) => sum + (image.cost ?? 0), 0),
-      );
+      store.addSpend(images.reduce((sum, image) => sum + (image.cost ?? 0), 0));
       store.addRound({ prompt, images });
     },
     onError: (error) => {
@@ -69,7 +63,7 @@ export function useModelStatus(modelId: string | null) {
     queryFn: async () => {
       const model = await api.get<ModelStatus>(`/api/generation/models/${modelId}/`);
       // The backend reports the cost only on the poll that finished the task.
-      if (model.status === "success") addCost("Modelo 3D", model.cost);
+      if (model.status === "success") useCreatorStore.getState().addSpend(model.cost);
       return model;
     },
     enabled: Boolean(modelId),
@@ -79,5 +73,15 @@ export function useModelStatus(modelId: string | null) {
       const status = query.state.data?.status;
       return status === "success" || status === "error" ? false : POLL_INTERVAL_MS;
     },
+  });
+}
+
+/** Balance and all-time spend straight from the Runware account — fetched fresh on demand. */
+export function useCredits(enabled: boolean) {
+  return useQuery({
+    queryKey: qk.credits(),
+    queryFn: () => api.get<Credits>("/api/generation/credits/"),
+    enabled,
+    staleTime: 0,
   });
 }

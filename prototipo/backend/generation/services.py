@@ -17,7 +17,7 @@ from django.conf import settings
 from PIL import Image, ImageOps, UnidentifiedImageError
 
 from common.exceptions import InvalidImage, NotFound, UpstreamUnavailable
-from integrations.ports import get_generation_port
+from integrations.ports import AccountCredits, get_generation_port
 
 _DOWNLOAD_TIMEOUT_SECONDS = 60
 log = structlog.get_logger(__name__)
@@ -123,3 +123,7 @@ def get_model(*, task_id: uuid.UUID) -> ModelStatus:
     glb_path.write_bytes(response.content)
     log.info("model_ready", task_id=str(task_id), cost=task.cost)
     return ModelStatus(id=str(task_id), status="success", glb_url=glb_url, cost=task.cost)
+
+
+def get_credits() -> AccountCredits:
+    return get_generation_port().get_credits()

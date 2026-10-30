@@ -94,3 +94,25 @@ def test_get_model_error(adapter):
 
     assert task.status == "error"
     assert task.error == "Bad image"
+
+
+@responses.activate
+@pytest.mark.parametrize("balance", [20.0081, {"amount": 20.0081, "currency": "USD"}])
+def test_get_credits(adapter, balance):
+    responses.post(
+        _BASE_URL,
+        json={
+            "data": [
+                {
+                    "taskType": "accountManagement",
+                    "balance": balance,
+                    "usage": {"total": {"credits": 0.0642, "requests": 31}},
+                }
+            ]
+        },
+    )
+
+    credits = adapter.get_credits()
+
+    assert credits.balance == 20.0081
+    assert credits.total_spent == 0.0642

@@ -3,7 +3,7 @@
 import { Box, RotateCcw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { CostPanel } from "@/features/creator/components/cost-panel";
+import { CreditsButton } from "@/features/creator/components/credits-button";
 import { ImagePickerStep } from "@/features/creator/components/image-picker-step";
 import { ModelStep } from "@/features/creator/components/model-step";
 import { PromptStep } from "@/features/creator/components/prompt-step";
@@ -27,7 +27,7 @@ export function Creator() {
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <CostPanel />
+          <CreditsButton />
           {step !== "create" && (
             <Button variant="ghost" size="sm" onClick={reset}>
               <RotateCcw />
