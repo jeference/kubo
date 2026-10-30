@@ -1,0 +1,39 @@
+[project]
+name = "kubo-prototipo-backend"
+version = "0.1.0"
+description = "Kubo — protótipo da experiência de criação do modelo 3D (backend)"
+requires-python = ">=3.12"
+dependencies = [
+    "Django>=5.2,<5.3",
+    "djangorestframework>=3.16",
+    "django-environ>=0.11",
+    "Pillow>=10.0",
+    "structlog>=24.0",
+    "requests>=2.31",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-django>=4.8",
+    "responses>=0.25",
+    "ruff>=0.6",
+]
+
+[tool.setuptools]
+packages = []
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["migrations", ".venv"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "DJ"]
+ignore = ["B904"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings"
+python_files = "test_*.py"
+addopts = "--strict-markers -q"
+filterwarnings = ["ignore::DeprecationWarning"]

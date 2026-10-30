@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 246 245 241;
+    --surface: 255 255 255;
+    --sunken: 238 236 230;
+    --ink: 22 22 20;
+    --muted: 112 110 104;
+    --line: 226 223 215;
+    --accent: 255 92 40;
+    --accent-hover: 236 76 24;
+    --accent-soft: 255 236 228;
+    --danger: 200 40 40;
+  }
+
+  body {
+    @apply bg-background font-sans text-ink antialiased;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer utilities {
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      rgb(var(--sunken)) 0%,
+      rgb(var(--line)) 50%,
+      rgb(var(--sunken)) 100%
+    );
+    background-size: 200% 100%;
+    @apply animate-shimmer;
+  }
+}
