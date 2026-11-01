@@ -7,6 +7,7 @@ from generation import services
 from generation.serializers import (
     CreateModelSerializer,
     CreditsSerializer,
+    EditImageSerializer,
     GenerateImagesSerializer,
     ImageFileSerializer,
     ModelStatusSerializer,
@@ -22,6 +23,16 @@ class GenerateImagesView(APIView):
         return Response(
             StoredImageSerializer(images, many=True).data, status=status.HTTP_201_CREATED
         )
+
+
+class EditImageView(APIView):
+    def post(self, request, id):
+        serializer = EditImageSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        image = services.edit_image(
+            image_id=id, instruction=serializer.validated_data["instruction"]
+        )
+        return Response(StoredImageSerializer(image).data, status=status.HTTP_201_CREATED)
 
 
 class UploadImageView(APIView):

@@ -63,6 +63,12 @@ class StubGenerationAdapter(GenerationPort):
             for i in range(count)
         ]
 
+    def edit_image(self, *, image: bytes, prompt: str, size: int) -> GeneratedImage:
+        time.sleep(1)
+        return GeneratedImage(
+            data=_figurine(size, random.choice(_PALETTES), random.randrange(1_000_000)), cost=0
+        )
+
     def submit_model(self, *, image: bytes) -> str:
         task_id = str(uuid.uuid4())
         self._tasks[task_id] = time.monotonic()

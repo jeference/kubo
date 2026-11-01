@@ -42,6 +42,10 @@ class GenerationPort(ABC):
         """Text -> `count` square PNG images."""
 
     @abstractmethod
+    def edit_image(self, *, image: bytes, prompt: str, size: int) -> GeneratedImage:
+        """Image + instruction -> the edited square PNG image."""
+
+    @abstractmethod
     def submit_model(self, *, image: bytes) -> str:
         """Start an async image -> 3D (GLB) task. Returns the task id."""
 

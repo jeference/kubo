@@ -33,11 +33,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   get: <T>(path: string) => request<T>(path),
-  post: <T>(path: string, json?: unknown) =>
+  post: <T>(path: string, json?: unknown, options?: { signal?: AbortSignal }) =>
     request<T>(path, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: json === undefined ? undefined : JSON.stringify(json),
+      signal: options?.signal,
     }),
   postForm: <T>(path: string, form: FormData) => request<T>(path, { method: "POST", body: form }),
 };

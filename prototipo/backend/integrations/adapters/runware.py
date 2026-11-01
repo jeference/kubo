@@ -95,6 +95,28 @@ class RunwareGenerationAdapter(GenerationPort):
             if item.get("imageDataURI")
         ]
 
+    def edit_image(self, *, image: bytes, prompt: str, size: int) -> GeneratedImage:
+        data = self._run(
+            {
+                "taskType": "imageInference",
+                "taskUUID": str(uuid.uuid4()),
+                "model": settings.RUNWARE_IMAGE_MODEL,
+                "positivePrompt": prompt,
+                "width": size,
+                "height": size,
+                "numberResults": 1,
+                "outputType": "dataURI",
+                "outputFormat": "PNG",
+                "includeCost": True,
+                "inputs": {"referenceImages": [_to_data_uri(image)]},
+            },
+            "edit_image",
+        )
+        item = next((d for d in data if d.get("imageDataURI")), None)
+        if item is None:
+            raise UpstreamUnavailable("Runware não devolveu a imagem editada.")
+        return GeneratedImage(data=_from_data_uri(item["imageDataURI"]), cost=item.get("cost"))
+
     def submit_model(self, *, image: bytes) -> str:
         task_id = str(uuid.uuid4())
         self._run(

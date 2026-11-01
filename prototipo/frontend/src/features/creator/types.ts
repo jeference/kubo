@@ -2,6 +2,7 @@ export type StoredImage = {
   id: string;
   url: string;
   cost: number | null;
+  warning: string;
 };
 
 export type ModelStatus = {
@@ -12,11 +13,15 @@ export type ModelStatus = {
   error: string;
 };
 
-export type Step = "create" | "pick" | "model";
+export type View = "create" | "studio";
 
-export type ImageRound = {
-  prompt: string;
-  images: StoredImage[];
+export type StudioTab = "2d" | "3d";
+
+/** One image of the session: the original (no instruction) or the result of an edit. */
+export type ImageVersion = {
+  image: StoredImage;
+  instruction: string | null;
+  sourceId: string | null;
 };
 
 /** Runware account, in USD. */

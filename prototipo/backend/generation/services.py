@@ -1,4 +1,4 @@
-"""Generation flow: prompt (or uploaded photo) -> images -> 3D model.
+"""Generation flow: prompt (or uploaded photo) -> image -> edits -> 3D model.
 
 State lives on disk under MEDIA_ROOT (`images/<id>.png`, `models/<id>.png|.glb`), so the
 prototype needs no database: a model is "done" once its GLB has been downloaded.
@@ -14,12 +14,21 @@ from pathlib import Path
 import requests
 import structlog
 from django.conf import settings
-from PIL import Image, ImageOps, UnidentifiedImageError
+from PIL import Image, ImageOps, ImageStat, UnidentifiedImageError
 
 from common.exceptions import InvalidImage, NotFound, UpstreamUnavailable
 from integrations.ports import AccountCredits, get_generation_port
 
 _DOWNLOAD_TIMEOUT_SECONDS = 60
+# A plain near-white background: every border strip has a median at least this bright and
+# varies at most this much (flagged exactly the off-white images in the edit test).
+_BACKGROUND_MIN_MEDIAN = 245
+_BACKGROUND_MAX_STDDEV = 5
+_BACKGROUND_STRIP_RATIO = 0.02
+_BACKGROUND_LOST_WARNING = (
+    "O fundo saiu do branco, o que pode piorar o modelo 3D. "
+    "Escolha outra versão ou peça para voltar ao fundo branco."
+)
 log = structlog.get_logger(__name__)
 
 
@@ -28,6 +37,7 @@ class StoredImage:
     id: str
     url: str
     cost: float | None = None
+    warning: str = ""
 
 
 @dataclass(frozen=True)
@@ -49,10 +59,36 @@ def _media_url(folder: str, filename: str) -> str:
     return f"{settings.MEDIA_URL}{folder}/{filename}"
 
 
-def _store_image(data: bytes, cost: float | None = None) -> StoredImage:
+def _store_image(data: bytes, cost: float | None = None, warning: str = "") -> StoredImage:
     image_id = str(uuid.uuid4())
     (_media_dir("images") / f"{image_id}.png").write_bytes(data)
-    return StoredImage(id=image_id, url=_media_url("images", f"{image_id}.png"), cost=cost)
+    return StoredImage(
+        id=image_id, url=_media_url("images", f"{image_id}.png"), cost=cost, warning=warning
+    )
+
+
+def _read_image(image_id: uuid.UUID) -> bytes:
+    path = _media_dir("images") / f"{image_id}.png"
+    if not path.exists():
+        raise NotFound("Imagem não encontrada.")
+    return path.read_bytes()
+
+
+def _background_is_plain(png: bytes) -> bool:
+    image = Image.open(io.BytesIO(png)).convert("RGB")
+    width, height = image.size
+    strip = max(1, int(min(width, height) * _BACKGROUND_STRIP_RATIO))
+    strips = [
+        (0, 0, width, strip),
+        (0, height - strip, width, height),
+        (0, 0, strip, height),
+        (width - strip, 0, width, height),
+    ]
+    for box in strips:
+        stat = ImageStat.Stat(image.crop(box))
+        if min(stat.median) < _BACKGROUND_MIN_MEDIAN or max(stat.stddev) > _BACKGROUND_MAX_STDDEV:
+            return False
+    return True
 
 
 def _normalize_png(raw: bytes) -> bytes:
@@ -73,7 +109,16 @@ def _normalize_png(raw: bytes) -> bytes:
 
 
 def build_image_prompt(*, prompt: str) -> str:
-    return f"{prompt.strip()}, {settings.GENERATION['PROMPT_STYLE_SUFFIX']}"
+    subject = prompt.strip().rstrip(".")
+    return settings.GENERATION["PROMPT_TEMPLATE"].format(
+        prompt=subject, prompt_lower=subject[:1].lower() + subject[1:]
+    )
+
+
+def build_edit_prompt(*, instruction: str) -> str:
+    return settings.GENERATION["EDIT_PROMPT_TEMPLATE"].format(
+        instruction=instruction.strip().rstrip(".")
+    )
 
 
 def generate_images(*, prompt: str) -> list[StoredImage]:
@@ -85,15 +130,26 @@ def generate_images(*, prompt: str) -> list[StoredImage]:
     return [_store_image(image.data, image.cost) for image in images]
 
 
+def edit_image(*, image_id: uuid.UUID, instruction: str) -> StoredImage:
+    source = _read_image(image_id)
+    edited = get_generation_port().edit_image(
+        image=source,
+        prompt=build_edit_prompt(instruction=instruction),
+        size=settings.GENERATION["IMAGE_SIZE"],
+    )
+    # Only warn when the edit is what lost the background: photos never had a plain one.
+    background_lost = _background_is_plain(source) and not _background_is_plain(edited.data)
+    return _store_image(
+        edited.data, edited.cost, warning=_BACKGROUND_LOST_WARNING if background_lost else ""
+    )
+
+
 def save_upload(*, raw: bytes) -> StoredImage:
     return _store_image(_normalize_png(raw))
 
 
 def create_model(*, image_id: uuid.UUID) -> ModelStatus:
-    path = _media_dir("images") / f"{image_id}.png"
-    if not path.exists():
-        raise NotFound("Imagem não encontrada.")
-    png = path.read_bytes()
+    png = _read_image(image_id)
     task_id = get_generation_port().submit_model(image=png)
     # Keep the exact input next to the output: it's what Tripo will get later.
     (_media_dir("models") / f"{task_id}.png").write_bytes(png)

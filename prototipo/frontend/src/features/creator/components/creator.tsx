@@ -4,14 +4,12 @@ import { Box, RotateCcw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { CreditsButton } from "@/features/creator/components/credits-button";
-import { ImagePickerStep } from "@/features/creator/components/image-picker-step";
-import { ModelStep } from "@/features/creator/components/model-step";
 import { PromptStep } from "@/features/creator/components/prompt-step";
-import { Stepper } from "@/features/creator/components/stepper";
+import { Studio } from "@/features/creator/components/studio";
 import { useCreatorStore } from "@/features/creator/store";
 
 export function Creator() {
-  const step = useCreatorStore((state) => state.step);
+  const view = useCreatorStore((state) => state.view);
   const reset = useCreatorStore((state) => state.reset);
 
   return (
@@ -28,7 +26,7 @@ export function Creator() {
         </div>
         <div className="flex items-center gap-2">
           <CreditsButton />
-          {step !== "create" && (
+          {view !== "create" && (
             <Button variant="ghost" size="sm" onClick={reset}>
               <RotateCcw />
               Recomeçar
@@ -37,12 +35,10 @@ export function Creator() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-6 pb-16">
-        <Stepper />
-        <div key={step} className="mt-8 animate-fade-in">
-          {step === "create" && <PromptStep />}
-          {step === "pick" && <ImagePickerStep />}
-          {step === "model" && <ModelStep />}
+      <main className="mx-auto max-w-6xl px-6 pb-16 pt-4">
+        <div key={view} className="animate-fade-in">
+          {view === "create" && <PromptStep />}
+          {view === "studio" && <Studio />}
         </div>
       </main>
     </div>

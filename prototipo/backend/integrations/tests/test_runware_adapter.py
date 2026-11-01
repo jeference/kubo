@@ -1,4 +1,5 @@
 import base64
+import json
 
 import pytest
 import responses
@@ -35,6 +36,29 @@ def test_generate_images_decodes_data_uris(adapter):
     sent = responses.calls[0].request
     assert sent.headers["Authorization"] == "Bearer test-key"
     assert b'"numberResults": 2' in sent.body
+
+
+@responses.activate
+def test_edit_image_sends_the_source_as_reference(adapter):
+    responses.post(_BASE_URL, json={"data": [{"imageDataURI": DATA_URI, "cost": 0.0017}]})
+
+    image = adapter.edit_image(image=b"source", prompt="make it red", size=512)
+
+    assert image.data == PNG
+    assert image.cost == 0.0017
+    task = json.loads(responses.calls[0].request.body)[0]
+    assert task["positivePrompt"] == "make it red"
+    assert task["inputs"]["referenceImages"] == [
+        "data:image/png;base64," + base64.b64encode(b"source").decode()
+    ]
+
+
+@responses.activate
+def test_edit_image_without_output_is_upstream_unavailable(adapter):
+    responses.post(_BASE_URL, json={"data": []})
+
+    with pytest.raises(UpstreamUnavailable):
+        adapter.edit_image(image=b"source", prompt="make it red", size=512)
 
 
 @responses.activate

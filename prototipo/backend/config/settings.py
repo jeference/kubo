@@ -7,6 +7,7 @@ no auth, no database models, files live in MEDIA_ROOT.
 from pathlib import Path
 
 import environ
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -92,25 +93,59 @@ GENERATION_ADAPTER = env(
     default="integrations.adapters.runware.RunwareGenerationAdapter",
 )
 RUNWARE_API_KEY = env("RUNWARE_API_KEY", default="")
-RUNWARE_IMAGE_MODEL = env("RUNWARE_IMAGE_MODEL", default="runware:100@1")  # FLUX.1 schnell
+RUNWARE_IMAGE_MODEL = env("RUNWARE_IMAGE_MODEL", default="runware:400@2")  # FLUX.2 [klein] 9B
 RUNWARE_3D_MODEL = env("RUNWARE_3D_MODEL", default="microsoft:trellis-2@4b")
-TRELLIS_SETTINGS = env.json(
-    "TRELLIS_SETTINGS",
-    default={
+# Quality/cost trade-off for the 3D preview. Costs are estimates (Runware bills by compute).
+# Omitted params use Trellis defaults: 12 steps per stage, 500k faces.
+TRELLIS_PRESETS = {
+    # ~US$0.01, ~35-40s
+    "low": {"resolution": 1024, "textureSize": 2048, "decimationTarget": 200000},
+    # ~US$0.02, ~50-60s — more steps where they show most (shape), plus the detail
+    # that low's decimation throws away.
+    "medium": {
         "resolution": 1024,
-        # Default is 500k faces — too heavy for a browser preview.
-        "decimationTarget": 200000,
         "textureSize": 2048,
+        "decimationTarget": 350000,
+        "sparseStructure": {"steps": 20},
+        "shapeSlat": {"steps": 20},
+        "texSlat": {"steps": 16},
     },
-)
+    # ~US$0.05-0.08, ~1-2min
+    "high": {
+        "resolution": 1536,
+        "textureSize": 4096,
+        "decimationTarget": 500000,
+        "sparseStructure": {"steps": 30},
+        "shapeSlat": {"steps": 30},
+        "texSlat": {"steps": 24},
+    },
+}
+TRELLIS_PRESET = env("TRELLIS_PRESET", default="low")
+if TRELLIS_PRESET not in TRELLIS_PRESETS:
+    raise ImproperlyConfigured(
+        f"TRELLIS_PRESET={TRELLIS_PRESET!r}; use one of {', '.join(TRELLIS_PRESETS)}."
+    )
+TRELLIS_SETTINGS = TRELLIS_PRESETS[TRELLIS_PRESET]
 
 GENERATION = {
-    "IMAGES_PER_PROMPT": 4,
+    "IMAGES_PER_PROMPT": 1,
     "IMAGE_SIZE": 1024,
-    # Appended to every user prompt so outputs come out "printable-looking".
-    "PROMPT_STYLE_SUFFIX": (
-        "single object, collectible figurine, full view, centered, isolated on a plain "
-        "white background, no text, soft studio lighting"
+    # Wraps the user's description to match the 2D references of Jujubit/Tripo, tuned
+    # against 18 of their images (2026-10-31): a sculpted figurine look (fur and hair
+    # as solid shapes, not strands), faithful colors, the whole object centered, and a
+    # near-white background (#FDFDFD; theirs is #FCFCFC). FLUX.2 [klein] overreacts to
+    # color words: "vivid"/"bright" turn objects rainbow, "natural" goes sepia,
+    # "pristine" drains color; "studio lighting" adds a gray vignette.
+    # Placeholders: {prompt} and {prompt_lower}.
+    "PROMPT_TEMPLATE": (
+        "{prompt}, as a detailed 3D figurine with rich, true-to-life colors, "
+        "shown whole, centered and filling the frame, isolated on a plain white background"
+    ),
+    # Sent with the current image as reference. Tested 2026-11-01: vague requests ("make it
+    # prettier") otherwise lose the white background, which the 3D step relies on.
+    # Placeholder: {instruction}.
+    "EDIT_PROMPT_TEMPLATE": (
+        "{instruction}. Keep everything else exactly the same, on a plain white background"
     ),
 }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { useRef } from "react";
 import { toast } from "sonner";
 
 import { useCreatorStore } from "@/features/creator/store";
@@ -17,22 +18,23 @@ const qk = {
 export const GENERATE_IMAGES_KEY = ["generate-images"];
 
 /**
- * The prompt step fires this and immediately moves to the picker, which shows skeletons
+ * The prompt step fires this and immediately moves to the studio, which shows a skeleton
  * via `useIsMutating(GENERATE_IMAGES_KEY)` — so results are handled here, not per call.
  */
 export function useGenerateImages() {
   return useMutation({
     mutationKey: GENERATE_IMAGES_KEY,
     mutationFn: (prompt: string) => api.post<StoredImage[]>("/api/generation/images/", { prompt }),
-    onSuccess: (images, prompt) => {
+    onMutate: () => useCreatorStore.getState().dropModel(),
+    onSuccess: (images) => {
       const store = useCreatorStore.getState();
       store.addSpend(images.reduce((sum, image) => sum + (image.cost ?? 0), 0));
-      store.addRound({ prompt, images });
+      const [first] = images;
+      if (first) store.startImage(first);
     },
     onError: (error) => {
       toast.error(error.message);
-      const store = useCreatorStore.getState();
-      if (store.rounds.length === 0) store.setStep("create");
+      useCreatorStore.getState().setView("create");
     },
   });
 }
@@ -44,15 +46,50 @@ export function useUploadImage() {
       form.append("image", file);
       return api.postForm<StoredImage>("/api/generation/images/upload/", form);
     },
+    onSuccess: (image) => {
+      const store = useCreatorStore.getState();
+      store.startImage(image);
+      store.setView("studio");
+    },
+    onError: (error) => toast.error(error.message),
   });
 }
 
-/** Start the 3D model from a stored image and move to the model step. */
+type EditVariables = { source: StoredImage; instruction: string };
+
+/** Edit an image by instruction. `cancel` drops the request and leaves no error behind. */
+export function useEditImage() {
+  const controller = useRef<AbortController | null>(null);
+  const mutation = useMutation({
+    mutationFn: ({ source, instruction }: EditVariables) => {
+      controller.current = new AbortController();
+      return api.post<StoredImage>(
+        `/api/generation/images/${source.id}/edit/`,
+        { instruction },
+        { signal: controller.current.signal },
+      );
+    },
+    onSuccess: (image, { source, instruction }) => {
+      const store = useCreatorStore.getState();
+      store.addSpend(image.cost);
+      store.addEdit(image, instruction, source.id);
+    },
+  });
+  return {
+    ...mutation,
+    cancel: () => {
+      controller.current?.abort();
+      mutation.reset();
+    },
+  };
+}
+
+/** Start the 3D model from the current image and open the 3D tab. */
 export function useCreateModel() {
   return useMutation({
     mutationFn: (image: StoredImage) =>
       api.post<ModelStatus>("/api/generation/models/", { image_id: image.id }),
-    onSuccess: (model, image) => useCreatorStore.getState().startModel(model.id, image),
+    onSuccess: (model) => useCreatorStore.getState().startModel(model.id),
     onError: (error) => toast.error(error.message),
   });
 }
