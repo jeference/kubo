@@ -1,7 +1,7 @@
 "use client";
 
 import { useIsMutating } from "@tanstack/react-query";
-import { Box, Loader2, Pause, Pencil, Play, RotateCw } from "lucide-react";
+import { ArrowLeft, Box, Loader2, Pause, Pencil, Play, RotateCw } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 
@@ -36,6 +36,7 @@ export function Studio() {
   const currentImage = useCreatorStore((state) => state.currentImage);
   const modelId = useCreatorStore((state) => state.modelId);
   const activeTab = useCreatorStore((state) => state.activeTab);
+  const setView = useCreatorStore((state) => state.setView);
   const isGeneratingImage = useIsMutating({ mutationKey: GENERATE_IMAGES_KEY }) > 0;
   // Polled here, not in the 3D tab, so it keeps going on the 2D tab and behind the editor.
   const status = useModelStatus(modelId);
@@ -47,13 +48,34 @@ export function Studio() {
   const isBuilding = Boolean(modelId) && !glbUrl && !failed;
   const errorMessage = status.error?.message || status.data?.error;
   const image = isGeneratingImage ? null : currentImage;
+  // Until a 3D is on its way, the actions sit under the image and there is no side panel.
+  const showsActions = !glbUrl && !isBuilding;
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[1fr_1fr] lg:gap-12">
+    <div className={cn("relative grid gap-8", !showsActions && "lg:grid-cols-[1fr_1fr] lg:gap-12")}>
       <section className="mx-auto w-full max-w-[560px]">
+        {showsActions && (
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label="Voltar e mudar a descrição"
+            className="mb-3 flex md:absolute md:left-0 md:top-0 md:mb-0"
+            onClick={() => setView("create")}
+          >
+            <ArrowLeft />
+          </Button>
+        )}
+
         {modelId && <TabSwitch isBuilding={isBuilding} />}
 
-        <Card className={cn("relative aspect-square w-full overflow-hidden", modelId && "mt-4")}>
+        <Card
+          className={cn(
+            "relative mx-auto aspect-square w-full overflow-hidden",
+            modelId && "mt-4",
+            // Keeps the buttons on screen without scrolling on shorter windows.
+            showsActions && "max-w-[max(280px,calc(100dvh-16rem))]",
+          )}
+        >
           {modelId && image && (
             <button
               type="button"
@@ -80,14 +102,8 @@ export function Studio() {
           )}
           {activeTab === "3d" && glbUrl && <Viewer glbUrl={glbUrl} />}
         </Card>
-      </section>
 
-      <aside className="lg:pt-2">
-        {glbUrl ? (
-          <PurchasePanel glbUrl={glbUrl} />
-        ) : isBuilding ? (
-          <BuildingNotice />
-        ) : (
+        {showsActions && (
           <ImageActions
             image={image}
             onEdit={() => setIsEditing(true)}
@@ -95,7 +111,13 @@ export function Studio() {
             isStartingModel={createModel.isPending}
           />
         )}
-      </aside>
+      </section>
+
+      {!showsActions && (
+        <aside className="lg:pt-2">
+          {glbUrl ? <PurchasePanel glbUrl={glbUrl} /> : <BuildingNotice />}
+        </aside>
+      )}
 
       <EditModal open={isEditing} onClose={() => setIsEditing(false)} />
     </div>
@@ -143,17 +165,12 @@ function ImageActions({
   onGenerate: (image: StoredImage) => void;
   isStartingModel: boolean;
 }) {
-  const setView = useCreatorStore((state) => state.setView);
-
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="font-display text-3xl font-semibold tracking-tight">Sua imagem</h2>
-        <p className="mt-2 text-muted">
-          O modelo 3D será construído a partir dela. Quer mudar algo? Edite a imagem antes de gerar.
-        </p>
-      </div>
-      <div className="flex flex-col gap-3 sm:flex-row">
+    <div className="mt-4 space-y-4">
+      <p className="text-center text-sm text-muted">
+        O modelo 3D será construído a partir dela. Quer mudar algo? Edite a imagem antes de gerar.
+      </p>
+      <div className="flex flex-col justify-center gap-3 sm:flex-row">
         <Button variant="outline" size="lg" disabled={!image} onClick={onEdit}>
           <Pencil />
           Editar imagem
@@ -169,13 +186,6 @@ function ImageActions({
           Ficou ótimo! Gerar em 3D
         </Button>
       </div>
-      <button
-        type="button"
-        onClick={() => setView("create")}
-        className="text-sm text-muted underline-offset-4 hover:text-ink hover:underline"
-      >
-        Voltar e mudar a descrição
-      </button>
     </div>
   );
 }
