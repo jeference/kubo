@@ -33,7 +33,7 @@ const config: Config = {
       keyframes: {
         "fade-in": { from: { opacity: "0", transform: "translateY(4px)" }, to: { opacity: "1" } },
         shimmer: { from: { backgroundPosition: "200% 0" }, to: { backgroundPosition: "-200% 0" } },
-        scan: { from: { transform: "translateY(-100%)" }, to: { transform: "translateY(16rem)" } },
+        scan: { from: { transform: "translateY(-100%)" }, to: { transform: "translateY(400%)" } },
         indeterminate: {
           from: { transform: "translateX(-100%)" },
           to: { transform: "translateX(300%)" },

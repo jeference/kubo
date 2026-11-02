@@ -71,21 +71,23 @@ export function Studio() {
 
   return (
     <div>
-      {showsActions && (
-        <Button
-          variant="outline"
-          size="icon"
-          aria-label="Voltar e mudar a descrição"
-          className="mb-3 flex"
-          onClick={() => setView("create")}
-        >
-          <ArrowLeft />
-        </Button>
-      )}
+      {/* The first column is exactly the image, so the gap to the panel is always the same.
+          The image follows the window width like Jujubit's, and the height so it is seen whole. */}
+      <div className="grid gap-y-6 lg:grid-cols-[min(900px,42vw,max(400px,calc(100dvh-10rem)))_minmax(0,675px)] lg:justify-center lg:gap-x-[min(4vw,72px)]">
+        {showsActions && (
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label="Voltar e mudar a descrição"
+            className="-mb-3 justify-self-start lg:col-span-2"
+            onClick={() => setView("create")}
+          >
+            <ArrowLeft />
+          </Button>
+        )}
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_1fr] lg:gap-12">
         {/* min-w-0: the 3D canvas has a fixed pixel width and would stop the column shrinking. */}
-        <section className="relative mx-auto w-full min-w-0 max-w-[560px]">
+        <section className="relative mx-auto w-full min-w-0 max-w-[560px] lg:max-w-none">
           {glbUrl && <TabSwitch />}
 
           <Card
@@ -97,9 +99,9 @@ export function Studio() {
                 aria-label="Editar imagem"
                 disabled={createModel.isPending}
                 onClick={() => setIsEditing(true)}
-                className="absolute right-3 top-3 z-10 flex flex-col items-center gap-0.5 rounded-xl bg-surface/90 px-2.5 py-1.5 text-xs text-accent transition-colors hover:bg-accent-soft disabled:pointer-events-none disabled:opacity-50"
+                className="absolute right-3 top-3 z-10 flex flex-col items-center gap-0.5 rounded-xl bg-surface/90 px-2.5 py-1.5 text-xs text-accent transition-colors hover:bg-accent-soft disabled:pointer-events-none disabled:opacity-50 lg:px-3 lg:py-2"
               >
-                <Pencil className="size-4" aria-hidden />
+                <Pencil className="size-4 lg:size-[22px]" aria-hidden />
                 Editar
               </button>
             )}
@@ -121,7 +123,9 @@ export function Studio() {
           </Card>
         </section>
 
-        <aside className="lg:pt-2">
+        {/* The panel starts below the top of the image, about as far as Jujubit's. The tabs and their margin
+            (50px) only sit above the image once the model is ready. */}
+        <aside className={cn("lg:pt-[60px]", glbUrl && "lg:pt-[110px]")}>
           {glbUrl ? (
             <PurchasePanel />
           ) : isBuilding ? (
@@ -157,7 +161,7 @@ function TabSwitch() {
             aria-selected={tab.id === activeTab}
             onClick={() => setActiveTab(tab.id)}
             className={cn(
-              "flex h-8 w-16 items-center justify-center rounded-full text-sm font-semibold transition-colors",
+              "flex h-8 w-16 items-center justify-center rounded-full text-sm font-semibold transition-colors lg:h-7 lg:w-14 lg:text-xs",
               tab.id === activeTab ? "bg-accent text-white" : "text-accent hover:bg-accent-soft",
             )}
           >
@@ -181,11 +185,8 @@ function ImageActions({
   return (
     <div className="space-y-6 pb-10 lg:pb-0">
       <div>
-        <h2 className="font-display text-3xl font-semibold tracking-tight">
-          Seu objeto impresso em 3D
-        </h2>
-        <p className="mt-3 text-2xl font-semibold">A partir de {formatPrice(LOWEST_PRICE)}</p>
-        <p className="mt-3 text-muted">
+        <p className="text-2xl font-semibold lg:text-xl">A partir de {formatPrice(LOWEST_PRICE)}</p>
+        <p className="mt-3 text-muted lg:text-sm">
           O modelo 3D será construído a partir desta imagem. Quer mudar algo? Edite a imagem antes
           de gerar.
         </p>
@@ -195,7 +196,7 @@ function ImageActions({
         <Button
           variant="accent"
           size="lg"
-          className="h-14 w-full text-base"
+          className="h-14 w-full text-base lg:h-12 lg:text-[15px]"
           disabled={!image}
           pending={isStartingModel}
           onClick={() => image && onGenerate(image)}
@@ -233,7 +234,7 @@ function BuildingNotice() {
         <h2 className="font-display text-3xl font-semibold tracking-tight">
           Criando seu modelo 3D
         </h2>
-        <p className="text-muted">Isso leva cerca de um minuto.</p>
+        <p className="text-muted lg:text-sm">Isso leva cerca de um minuto.</p>
       </div>
       <ol className="space-y-3">
         {BUILD_STEPS.map((step, index) => {
@@ -244,7 +245,7 @@ function BuildingNotice() {
               key={step}
               aria-current={isCurrent ? "step" : undefined}
               className={cn(
-                "flex items-center gap-3",
+                "flex items-center gap-3 lg:text-sm",
                 isCurrent && "font-medium",
                 index > currentStep && "text-muted",
               )}
@@ -272,10 +273,10 @@ function Building({ image }: { image: StoredImage }) {
 
   return (
     <div className="flex size-full flex-col items-center justify-center text-center">
-      <div className="relative size-64 overflow-hidden rounded-2xl border border-line bg-surface">
+      <div className="relative aspect-square w-3/4 overflow-hidden rounded-2xl border border-line bg-surface">
         {/* eslint-disable-next-line @next/next/no-img-element -- dynamic media served by Django */}
         <img src={image.url} alt="" className="size-full object-contain opacity-80" />
-        <div className="absolute inset-x-0 top-0 h-16 animate-scan bg-gradient-to-b from-transparent via-accent/25 to-transparent" />
+        <div className="absolute inset-x-0 top-0 h-1/4 animate-scan bg-gradient-to-b from-transparent via-accent/25 to-transparent" />
       </div>
       <p className="mt-3 font-mono text-xs text-muted" data-testid="elapsed">
         {elapsed}s

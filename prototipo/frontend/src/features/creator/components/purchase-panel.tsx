@@ -25,18 +25,15 @@ export function PurchasePanel() {
     // No animation on phones: its transform would move the pinned buttons while it runs.
     <div className="space-y-6 pb-10 lg:animate-fade-in lg:pb-0">
       <div>
-        <h2 className="font-display text-3xl font-semibold tracking-tight">
-          Seu objeto impresso em 3D
-        </h2>
-        <p className="mt-3 text-2xl font-semibold" data-testid="price">
+        <p className="text-2xl font-semibold lg:text-xl" data-testid="price">
           {formatPrice(size.price * quantity)}
         </p>
-        <p className="mt-1 text-sm text-muted">Frete calculado na finalização</p>
+        <p className="mt-1 text-sm text-muted lg:text-[13px]">Frete calculado na finalização</p>
       </div>
 
       <fieldset>
         <legend className="text-xs font-semibold uppercase tracking-widest">Tamanho</legend>
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="mt-3 flex flex-wrap gap-2 lg:gap-3">
           {SIZES.map((option) => (
             <button
               key={option.id}
@@ -44,7 +41,7 @@ export function PurchasePanel() {
               aria-pressed={option.id === sizeId}
               onClick={() => setSizeId(option.id)}
               className={cn(
-                "border px-4 py-2.5 text-sm transition-colors",
+                "border px-4 py-2.5 text-sm transition-colors lg:py-2 lg:text-[13.5px]",
                 option.id === sizeId
                   ? "border-ink font-medium text-ink"
                   : "border-line text-ink hover:border-ink/40",
@@ -64,7 +61,7 @@ export function PurchasePanel() {
             aria-label="Diminuir quantidade"
             disabled={quantity <= 1}
             onClick={() => setQuantity(quantity - 1)}
-            className="flex size-11 items-center justify-center transition-colors hover:bg-sunken disabled:opacity-40"
+            className="flex size-11 items-center justify-center transition-colors hover:bg-sunken disabled:opacity-40 lg:size-9"
           >
             <Minus className="size-4" />
           </button>
@@ -76,7 +73,7 @@ export function PurchasePanel() {
             aria-label="Aumentar quantidade"
             disabled={quantity >= MAX_QUANTITY}
             onClick={() => setQuantity(quantity + 1)}
-            className="flex size-11 items-center justify-center transition-colors hover:bg-sunken disabled:opacity-40"
+            className="flex size-11 items-center justify-center transition-colors hover:bg-sunken disabled:opacity-40 lg:size-9"
           >
             <Plus className="size-4" />
           </button>
@@ -87,7 +84,7 @@ export function PurchasePanel() {
       <div className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-2 gap-3 border-t border-line bg-background p-4 lg:static lg:border-0 lg:bg-transparent lg:p-0">
         <Button
           size="lg"
-          className="whitespace-normal px-3 text-sm leading-tight lg:px-7 lg:text-[15px]"
+          className="whitespace-normal px-3 text-sm leading-tight lg:h-11 lg:px-7"
           onClick={showUnavailable}
         >
           Adicionar ao carrinho
@@ -95,7 +92,7 @@ export function PurchasePanel() {
         <Button
           variant="accent"
           size="lg"
-          className="whitespace-normal px-3 text-sm leading-tight lg:px-7 lg:text-[15px]"
+          className="whitespace-normal px-3 text-sm leading-tight lg:h-11 lg:px-7"
           onClick={showUnavailable}
         >
           Comprar agora
