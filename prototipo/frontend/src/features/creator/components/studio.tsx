@@ -1,6 +1,6 @@
 "use client";
 
-import { useIsMutating } from "@tanstack/react-query";
+import { useIsMutating, useMutationState } from "@tanstack/react-query";
 import {
   ArrowLeft,
   Box,
@@ -11,9 +11,10 @@ import {
   Pencil,
   Play,
   RotateCw,
+  Sparkles,
 } from "lucide-react";
 import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -30,22 +31,54 @@ const ModelViewer = dynamic(
   { ssr: false, loading: () => <div className="skeleton size-full" /> },
 );
 
+type Progress = {
+  title: string;
+  subtitle: string;
+  steps: string[];
+  /** The last step keeps changing, so a slow generation never looks stuck. */
+  lastStepPhrases: string[];
+  secondsPerStep: number;
+  secondsPerPhrase: number;
+};
+
 // Paced by time, not by the real progress: the provider does not report any.
-const BUILD_STEPS = [
-  "Estudando cada detalhe",
-  "Aquecendo o bico da impressora",
-  "Empilhando camadas",
-  "Dando os últimos retoques",
-];
-const SECONDS_PER_STEP = 7;
-// The 3D can take from 26 to 92 s: the last step keeps changing so it never looks stuck.
-const LAST_STEP_PHRASES = [
-  "Dando os últimos retoques",
-  "Conferindo cada ângulo",
-  "Caprichando no acabamento",
-  "Quase lá, está ficando bom",
-];
-const SECONDS_PER_PHRASE = 8;
+const IMAGE_PROGRESS: Progress = {
+  title: "Criando sua imagem",
+  subtitle: "Isso leva alguns segundos.",
+  steps: [
+    "Entendendo sua ideia",
+    "Rascunhando o objeto",
+    "Escolhendo as cores",
+    "Caprichando nos detalhes",
+  ],
+  lastStepPhrases: [
+    "Caprichando nos detalhes",
+    "Ajustando a luz",
+    "Conferindo o enquadramento",
+    "Quase lá, está ficando bom",
+  ],
+  secondsPerStep: 3,
+  secondsPerPhrase: 4,
+};
+
+const MODEL_PROGRESS: Progress = {
+  title: "Criando seu modelo 3D",
+  subtitle: "Isso leva cerca de um minuto.",
+  steps: [
+    "Estudando cada detalhe",
+    "Aquecendo o bico da impressora",
+    "Empilhando camadas",
+    "Dando os últimos retoques",
+  ],
+  lastStepPhrases: [
+    "Dando os últimos retoques",
+    "Conferindo cada ângulo",
+    "Caprichando no acabamento",
+    "Quase lá, está ficando bom",
+  ],
+  secondsPerStep: 7,
+  secondsPerPhrase: 8,
+};
 
 const TABS: Array<{ id: StudioTab; label: string }> = [
   { id: "2d", label: "2D" },
@@ -67,7 +100,7 @@ export function Studio() {
   const isBuilding = Boolean(modelId) && !glbUrl && !failed;
   const errorMessage = status.error?.message || status.data?.error;
   const image = isGeneratingImage ? null : currentImage;
-  const showsActions = !glbUrl && !isBuilding;
+  const showsActions = !glbUrl && !isBuilding && !isGeneratingImage;
 
   return (
     <div>
@@ -106,7 +139,7 @@ export function Studio() {
               </button>
             )}
 
-            {!image && <div className="skeleton size-full" />}
+            {!image && <GeneratingImage />}
             {image && activeTab === "2d" && (
               // eslint-disable-next-line @next/next/no-img-element -- dynamic media served by Django
               <img src={image.url} alt="Imagem 2D do objeto" className="size-full object-contain" />
@@ -126,7 +159,9 @@ export function Studio() {
         {/* The panel starts below the top of the image, about as far as Jujubit's. The tabs and their margin
             (50px) only sit above the image once the model is ready. */}
         <aside className={cn("lg:pt-[60px]", glbUrl && "lg:pt-[110px]")}>
-          {glbUrl ? (
+          {isGeneratingImage ? (
+            <GeneratingImageNotice />
+          ) : glbUrl ? (
             <PurchasePanel />
           ) : isBuilding ? (
             <BuildingNotice />
@@ -209,9 +244,8 @@ function ImageActions({
   );
 }
 
-/** Seconds since the 3D task started, updated every second. */
-function useBuildElapsed() {
-  const startedAt = useCreatorStore((state) => state.modelStartedAt);
+/** Seconds since `startedAt`, updated every second. */
+function useElapsedSince(startedAt: number | null) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 1000);
@@ -220,24 +254,42 @@ function useBuildElapsed() {
   return Math.max(0, Math.floor((now - (startedAt ?? now)) / 1000));
 }
 
+function useImageElapsed() {
+  const submittedAt = useMutationState({
+    filters: { mutationKey: GENERATE_IMAGES_KEY, status: "pending" },
+    select: (mutation) => mutation.state.submittedAt,
+  });
+  return useElapsedSince(submittedAt.at(-1) ?? null);
+}
+
+function useModelElapsed() {
+  return useElapsedSince(useCreatorStore((state) => state.modelStartedAt));
+}
+
+function GeneratingImageNotice() {
+  return <ProgressNotice progress={IMAGE_PROGRESS} elapsed={useImageElapsed()} />;
+}
+
 function BuildingNotice() {
-  const elapsed = useBuildElapsed();
-  const lastStep = BUILD_STEPS.length - 1;
-  const currentStep = Math.min(Math.floor(elapsed / SECONDS_PER_STEP), lastStep);
-  const lastStepSeconds = Math.max(0, elapsed - lastStep * SECONDS_PER_STEP);
+  return <ProgressNotice progress={MODEL_PROGRESS} elapsed={useModelElapsed()} />;
+}
+
+function ProgressNotice({ progress, elapsed }: { progress: Progress; elapsed: number }) {
+  const { title, subtitle, steps, lastStepPhrases, secondsPerStep, secondsPerPhrase } = progress;
+  const lastStep = steps.length - 1;
+  const currentStep = Math.min(Math.floor(elapsed / secondsPerStep), lastStep);
+  const lastStepSeconds = Math.max(0, elapsed - lastStep * secondsPerStep);
   const phrase =
-    LAST_STEP_PHRASES[Math.floor(lastStepSeconds / SECONDS_PER_PHRASE) % LAST_STEP_PHRASES.length];
+    lastStepPhrases[Math.floor(lastStepSeconds / secondsPerPhrase) % lastStepPhrases.length];
 
   return (
     <div className="animate-fade-in space-y-5">
       <div className="space-y-2">
-        <h2 className="font-display text-3xl font-semibold tracking-tight">
-          Criando seu modelo 3D
-        </h2>
-        <p className="text-muted lg:text-sm">Isso leva cerca de um minuto.</p>
+        <h2 className="font-display text-3xl font-semibold tracking-tight">{title}</h2>
+        <p className="text-muted lg:text-sm">{subtitle}</p>
       </div>
       <ol className="space-y-3">
-        {BUILD_STEPS.map((step, index) => {
+        {steps.map((step, index) => {
           const isCurrent = index === currentStep;
           const label = isCurrent && index === lastStep ? phrase : step;
           return (
@@ -268,20 +320,36 @@ function BuildingNotice() {
   );
 }
 
-function Building({ image }: { image: StoredImage }) {
-  const elapsed = useBuildElapsed();
-
+function ProgressFrame({ elapsed, children }: { elapsed: number; children: ReactNode }) {
   return (
     <div className="flex size-full flex-col items-center justify-center text-center">
       <div className="relative aspect-square w-3/4 overflow-hidden rounded-2xl border border-line bg-surface">
-        {/* eslint-disable-next-line @next/next/no-img-element -- dynamic media served by Django */}
-        <img src={image.url} alt="" className="size-full object-contain opacity-80" />
+        {children}
         <div className="absolute inset-x-0 top-0 h-1/4 animate-scan bg-gradient-to-b from-transparent via-accent/25 to-transparent" />
       </div>
       <p className="mt-3 font-mono text-xs text-muted" data-testid="elapsed">
         {elapsed}s
       </p>
     </div>
+  );
+}
+
+function GeneratingImage() {
+  return (
+    <ProgressFrame elapsed={useImageElapsed()}>
+      <div className="skeleton flex size-full items-center justify-center">
+        <Sparkles className="size-10 animate-pulse text-accent/60" aria-hidden />
+      </div>
+    </ProgressFrame>
+  );
+}
+
+function Building({ image }: { image: StoredImage }) {
+  return (
+    <ProgressFrame elapsed={useModelElapsed()}>
+      {/* eslint-disable-next-line @next/next/no-img-element -- dynamic media served by Django */}
+      <img src={image.url} alt="" className="size-full object-contain opacity-80" />
+    </ProgressFrame>
   );
 }
 
