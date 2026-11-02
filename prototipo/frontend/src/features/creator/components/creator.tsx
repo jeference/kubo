@@ -20,16 +20,16 @@ export function Creator() {
             <Box className="size-6 text-accent" strokeWidth={2.2} aria-hidden />
             kubo
           </span>
-          <span className="rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-medium text-accent">
+          <span className="hidden rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-medium text-accent sm:inline">
             protótipo
           </span>
         </div>
         <div className="flex items-center gap-2">
           <CreditsButton />
           {view !== "create" && (
-            <Button variant="ghost" size="sm" onClick={reset}>
+            <Button variant="ghost" size="sm" aria-label="Recomeçar" onClick={reset}>
               <RotateCcw />
-              Recomeçar
+              <span className="hidden sm:inline">Recomeçar</span>
             </Button>
           )}
         </div>

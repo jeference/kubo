@@ -1,7 +1,7 @@
 "use client";
 
 import { useIsMutating } from "@tanstack/react-query";
-import { ArrowLeft, Box, Loader2, Pause, Pencil, Play, RotateCw } from "lucide-react";
+import { ArrowLeft, Box, Pause, Pencil, Play, RotateCw } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 
@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/card";
 import { EditModal } from "@/features/creator/components/edit-modal";
 import { PurchasePanel } from "@/features/creator/components/purchase-panel";
 import { GENERATE_IMAGES_KEY, useCreateModel, useModelStatus } from "@/features/creator/hooks";
+import { formatPrice, LOWEST_PRICE } from "@/features/creator/lib/sizes";
 import { useCreatorStore } from "@/features/creator/store";
 import type { StoredImage, StudioTab } from "@/features/creator/types";
 import { cn } from "@/lib/utils";
@@ -38,7 +39,6 @@ export function Studio() {
   const activeTab = useCreatorStore((state) => state.activeTab);
   const setView = useCreatorStore((state) => state.setView);
   const isGeneratingImage = useIsMutating({ mutationKey: GENERATE_IMAGES_KEY }) > 0;
-  // Polled here, not in the 3D tab, so it keeps going on the 2D tab and behind the editor.
   const status = useModelStatus(modelId);
   const createModel = useCreateModel();
   const [isEditing, setIsEditing] = useState(false);
@@ -48,89 +48,88 @@ export function Studio() {
   const isBuilding = Boolean(modelId) && !glbUrl && !failed;
   const errorMessage = status.error?.message || status.data?.error;
   const image = isGeneratingImage ? null : currentImage;
-  // Until a 3D is on its way, the actions sit under the image and there is no side panel.
   const showsActions = !glbUrl && !isBuilding;
 
   return (
-    <div className={cn("relative grid gap-8", !showsActions && "lg:grid-cols-[1fr_1fr] lg:gap-12")}>
-      <section className="mx-auto w-full max-w-[560px]">
-        {showsActions && (
-          <Button
-            variant="outline"
-            size="icon"
-            aria-label="Voltar e mudar a descrição"
-            className="mb-3 flex md:absolute md:left-0 md:top-0 md:mb-0"
-            onClick={() => setView("create")}
-          >
-            <ArrowLeft />
-          </Button>
-        )}
-
-        {modelId && <TabSwitch isBuilding={isBuilding} />}
-
-        <Card
-          className={cn(
-            "relative mx-auto aspect-square w-full overflow-hidden",
-            modelId && "mt-4",
-            // Keeps the buttons on screen without scrolling on shorter windows.
-            showsActions && "max-w-[max(280px,calc(100dvh-16rem))]",
-          )}
+    <div>
+      {showsActions && (
+        <Button
+          variant="outline"
+          size="icon"
+          aria-label="Voltar e mudar a descrição"
+          className="mb-3 flex"
+          onClick={() => setView("create")}
         >
-          {modelId && image && (
-            <button
-              type="button"
-              onClick={() => setIsEditing(true)}
-              className="absolute right-3 top-3 z-10 flex flex-col items-center gap-0.5 rounded-xl bg-surface/90 px-2.5 py-1.5 text-xs text-accent transition-colors hover:bg-accent-soft"
-            >
-              <Pencil className="size-4" aria-hidden />
-              Editar
-            </button>
-          )}
+          <ArrowLeft />
+        </Button>
+      )}
 
-          {!image && <div className="skeleton size-full" />}
-          {image && activeTab === "2d" && (
-            // eslint-disable-next-line @next/next/no-img-element -- dynamic media served by Django
-            <img src={image.url} alt="Imagem 2D do objeto" className="size-full object-contain" />
-          )}
-          {image && activeTab === "3d" && isBuilding && <Building image={image} />}
-          {image && activeTab === "3d" && failed && (
-            <BuildError
-              message={errorMessage}
-              onRetry={() => createModel.mutate(image)}
-              isRetrying={createModel.isPending}
+      <div className="grid gap-6 lg:grid-cols-[1fr_1fr] lg:gap-12">
+        {/* min-w-0: the 3D canvas has a fixed pixel width and would stop the column shrinking. */}
+        <section className="relative mx-auto w-full min-w-0 max-w-[560px]">
+          {glbUrl && <TabSwitch />}
+
+          <Card
+            className={cn("relative aspect-square w-full overflow-hidden", glbUrl && "lg:mt-4")}
+          >
+            {!isBuilding && image && (
+              <button
+                type="button"
+                aria-label="Editar imagem"
+                disabled={createModel.isPending}
+                onClick={() => setIsEditing(true)}
+                className="absolute right-3 top-3 z-10 flex flex-col items-center gap-0.5 rounded-xl bg-surface/90 px-2.5 py-1.5 text-xs text-accent transition-colors hover:bg-accent-soft disabled:pointer-events-none disabled:opacity-50"
+              >
+                <Pencil className="size-4" aria-hidden />
+                Editar
+              </button>
+            )}
+
+            {!image && <div className="skeleton size-full" />}
+            {image && activeTab === "2d" && (
+              // eslint-disable-next-line @next/next/no-img-element -- dynamic media served by Django
+              <img src={image.url} alt="Imagem 2D do objeto" className="size-full object-contain" />
+            )}
+            {image && activeTab === "3d" && isBuilding && <Building image={image} />}
+            {image && activeTab === "3d" && failed && (
+              <BuildError
+                message={errorMessage}
+                onRetry={() => createModel.mutate(image)}
+                isRetrying={createModel.isPending}
+              />
+            )}
+            {activeTab === "3d" && glbUrl && <Viewer glbUrl={glbUrl} />}
+          </Card>
+        </section>
+
+        <aside className="lg:pt-2">
+          {glbUrl ? (
+            <PurchasePanel glbUrl={glbUrl} />
+          ) : isBuilding ? (
+            <BuildingNotice />
+          ) : (
+            <ImageActions
+              image={image}
+              onGenerate={(chosen) => createModel.mutate(chosen)}
+              isStartingModel={createModel.isPending}
             />
           )}
-          {activeTab === "3d" && glbUrl && <Viewer glbUrl={glbUrl} />}
-        </Card>
-
-        {showsActions && (
-          <ImageActions
-            image={image}
-            onEdit={() => setIsEditing(true)}
-            onGenerate={(chosen) => createModel.mutate(chosen)}
-            isStartingModel={createModel.isPending}
-          />
-        )}
-      </section>
-
-      {!showsActions && (
-        <aside className="lg:pt-2">
-          {glbUrl ? <PurchasePanel glbUrl={glbUrl} /> : <BuildingNotice />}
         </aside>
-      )}
+      </div>
 
       <EditModal open={isEditing} onClose={() => setIsEditing(false)} />
     </div>
   );
 }
 
-function TabSwitch({ isBuilding }: { isBuilding: boolean }) {
+function TabSwitch() {
   const activeTab = useCreatorStore((state) => state.activeTab);
   const setActiveTab = useCreatorStore((state) => state.setActiveTab);
 
   return (
-    <div className="flex animate-fade-in justify-center">
-      <div role="tablist" className="flex rounded-full border border-accent/40 p-0.5">
+    // On phones it sits inside the image, on the corner opposite the edit button.
+    <div className="absolute left-3 top-3 z-10 flex animate-fade-in lg:static lg:justify-center">
+      <div role="tablist" className="flex rounded-full border border-accent/40 bg-surface/90 p-0.5">
         {TABS.map((tab) => (
           <button
             key={tab.id}
@@ -139,14 +138,11 @@ function TabSwitch({ isBuilding }: { isBuilding: boolean }) {
             aria-selected={tab.id === activeTab}
             onClick={() => setActiveTab(tab.id)}
             className={cn(
-              "flex h-8 w-16 items-center justify-center gap-1.5 rounded-full text-sm font-semibold transition-colors",
+              "flex h-8 w-16 items-center justify-center rounded-full text-sm font-semibold transition-colors",
               tab.id === activeTab ? "bg-accent text-white" : "text-accent hover:bg-accent-soft",
             )}
           >
             {tab.label}
-            {tab.id === "3d" && isBuilding && (
-              <Loader2 className="size-3 animate-spin" aria-label="Gerando" />
-            )}
           </button>
         ))}
       </div>
@@ -156,28 +152,31 @@ function TabSwitch({ isBuilding }: { isBuilding: boolean }) {
 
 function ImageActions({
   image,
-  onEdit,
   onGenerate,
   isStartingModel,
 }: {
   image: StoredImage | null;
-  onEdit: () => void;
   onGenerate: (image: StoredImage) => void;
   isStartingModel: boolean;
 }) {
   return (
-    <div className="mt-4 space-y-4">
-      <p className="text-center text-sm text-muted">
-        O modelo 3D será construído a partir dela. Quer mudar algo? Edite a imagem antes de gerar.
-      </p>
-      <div className="flex flex-col justify-center gap-3 sm:flex-row">
-        <Button variant="outline" size="lg" disabled={!image} onClick={onEdit}>
-          <Pencil />
-          Editar imagem
-        </Button>
+    <div className="space-y-6 pb-10 lg:pb-0">
+      <div>
+        <h2 className="font-display text-3xl font-semibold tracking-tight">
+          Seu objeto impresso em 3D
+        </h2>
+        <p className="mt-3 text-2xl font-semibold">A partir de {formatPrice(LOWEST_PRICE)}</p>
+        <p className="mt-3 text-muted">
+          O modelo 3D será construído a partir desta imagem. Quer mudar algo? Edite a imagem antes
+          de gerar.
+        </p>
+      </div>
+      {/* Pinned to the bottom on phones, like Jujubit's buy bar, so it never leaves the screen. */}
+      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-background p-4 lg:static lg:border-0 lg:bg-transparent lg:p-0">
         <Button
           variant="accent"
           size="lg"
+          className="h-14 w-full text-base"
           disabled={!image}
           pending={isStartingModel}
           onClick={() => image && onGenerate(image)}
@@ -194,9 +193,7 @@ function BuildingNotice() {
   return (
     <div className="animate-fade-in space-y-2">
       <h2 className="font-display text-3xl font-semibold tracking-tight">Criando seu modelo 3D</h2>
-      <p className="text-muted">
-        Isso leva cerca de um minuto. Enquanto isso, você pode voltar para a aba 2D e ver a imagem.
-      </p>
+      <p className="text-muted">Isso leva cerca de um minuto.</p>
     </div>
   );
 }

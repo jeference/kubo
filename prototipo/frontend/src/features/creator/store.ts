@@ -13,7 +13,7 @@ type CreatorState = {
   currentImage: StoredImage | null;
   activeTab: StudioTab;
   modelId: string | null;
-  /** When the 3D task started: lives here so the elapsed time survives switching tabs. */
+  /** When the 3D task started, for the elapsed time on the progress screen. */
   modelStartedAt: number | null;
   /** USD spent since the page was opened (sum of the costs Runware reports per call). */
   sessionSpend: number;

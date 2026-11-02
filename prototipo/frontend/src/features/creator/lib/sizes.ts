@@ -11,3 +11,11 @@ export const SIZES = [
 ] as const;
 
 export const DEFAULT_SIZE = SIZES[0];
+
+export const LOWEST_PRICE = Math.min(...SIZES.map((size) => size.price));
+
+const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+
+export function formatPrice(value: number): string {
+  return brl.format(value);
+}

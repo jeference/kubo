@@ -5,16 +5,15 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { DEFAULT_SIZE, SIZES } from "@/features/creator/lib/sizes";
+import { DEFAULT_SIZE, formatPrice, SIZES } from "@/features/creator/lib/sizes";
 import { useCreatorStore } from "@/features/creator/store";
 import { cn } from "@/lib/utils";
 
 const MAX_QUANTITY = 10;
 
-const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
-
 function showUnavailable() {
-  toast.info("A compra ainda não está disponível neste protótipo.");
+  // On top, because the default spot would cover the buttons pinned to the bottom on phones.
+  toast.info("A compra ainda não está disponível neste protótipo.", { position: "top-center" });
 }
 
 /** Visual only: nothing here reaches the backend yet. */
@@ -25,13 +24,14 @@ export function PurchasePanel({ glbUrl }: { glbUrl: string }) {
   const size = SIZES.find((s) => s.id === sizeId) ?? DEFAULT_SIZE;
 
   return (
-    <div className="animate-fade-in space-y-6">
+    // No animation on phones: its transform would move the pinned buttons while it runs.
+    <div className="space-y-6 pb-10 lg:animate-fade-in lg:pb-0">
       <div>
         <h2 className="font-display text-3xl font-semibold tracking-tight">
           Seu objeto impresso em 3D
         </h2>
         <p className="mt-3 text-2xl font-semibold" data-testid="price">
-          {brl.format(size.price * quantity)}
+          {formatPrice(size.price * quantity)}
         </p>
         <p className="mt-1 text-sm text-muted">Frete calculado na finalização</p>
       </div>
@@ -85,11 +85,21 @@ export function PurchasePanel({ glbUrl }: { glbUrl: string }) {
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Button size="lg" onClick={showUnavailable}>
+      {/* Pinned to the bottom on phones, like Jujubit's buy bar. */}
+      <div className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-2 gap-3 border-t border-line bg-background p-4 lg:static lg:border-0 lg:bg-transparent lg:p-0">
+        <Button
+          size="lg"
+          className="whitespace-normal px-3 text-sm leading-tight lg:px-7 lg:text-[15px]"
+          onClick={showUnavailable}
+        >
           Adicionar ao carrinho
         </Button>
-        <Button variant="accent" size="lg" onClick={showUnavailable}>
+        <Button
+          variant="accent"
+          size="lg"
+          className="whitespace-normal px-3 text-sm leading-tight lg:px-7 lg:text-[15px]"
+          onClick={showUnavailable}
+        >
           Comprar agora
         </Button>
       </div>
