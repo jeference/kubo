@@ -18,7 +18,7 @@ export function CreditsButton() {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" className="focus-visible:outline-highlight">
           <Coins />
           Créditos
         </Button>

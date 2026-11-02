@@ -38,7 +38,7 @@ export function ModelViewer({ url, autoRotate }: { url: string; autoRotate: bool
       gl={{ toneMapping: NeutralToneMapping }}
       shadows
     >
-      <color attach="background" args={["#f1efea"]} />
+      <color attach="background" args={["#f4f4f4"]} />
       <StudioLight />
       <Suspense fallback={null}>
         <Stage environment={null} intensity={0} shadows="contact" adjustCamera={1.2}>

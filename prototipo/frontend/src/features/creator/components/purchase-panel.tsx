@@ -26,7 +26,9 @@ export function PurchasePanel() {
     <div className="space-y-6 pb-10 lg:animate-fade-in lg:pb-0">
       <div>
         <p className="text-2xl font-semibold lg:text-xl" data-testid="price">
-          {formatPrice(size.price * quantity)}
+          <span className="rounded-md bg-highlight px-2 py-0.5 text-accent">
+            {formatPrice(size.price * quantity)}
+          </span>
         </p>
         <p className="mt-1 text-sm text-muted lg:text-[13px]">Frete calculado na finalização</p>
       </div>

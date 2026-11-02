@@ -11,9 +11,8 @@ const buttonVariants = cva(
     variants: {
       variant: {
         /** Primary action — one per screen. */
-        default: "bg-ink text-surface hover:bg-ink/85",
-        accent: "bg-accent text-white hover:bg-accent-hover",
-        outline: "border border-line bg-surface text-ink hover:border-ink/30 hover:bg-sunken",
+        accent: "border-2 border-accent bg-highlight text-accent hover:bg-highlight-hover",
+        outline: "border-2 border-accent bg-surface text-accent hover:bg-accent-soft",
         ghost: "text-muted hover:bg-sunken hover:text-ink",
       },
       size: {
@@ -23,7 +22,7 @@ const buttonVariants = cva(
         icon: "size-9",
       },
     },
-    defaultVariants: { variant: "default", size: "default" },
+    defaultVariants: { variant: "outline", size: "default" },
   },
 );
 

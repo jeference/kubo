@@ -13,8 +13,11 @@ const config: Config = {
         line: "rgb(var(--line) / <alpha-value>)",
         accent: {
           DEFAULT: "rgb(var(--accent) / <alpha-value>)",
-          hover: "rgb(var(--accent-hover) / <alpha-value>)",
           soft: "rgb(var(--accent-soft) / <alpha-value>)",
+        },
+        highlight: {
+          DEFAULT: "rgb(var(--highlight) / <alpha-value>)",
+          hover: "rgb(var(--highlight-hover) / <alpha-value>)",
         },
         danger: "rgb(var(--danger) / <alpha-value>)",
       },

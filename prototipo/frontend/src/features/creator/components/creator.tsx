@@ -14,21 +14,27 @@ export function Creator() {
 
   return (
     <div className="min-h-dvh">
-      <header className="bg-surface shadow-card">
+      <header className="bg-accent shadow-card">
         <div className="flex h-16 items-center justify-between px-6 lg:h-20 lg:px-9">
           <div className="flex items-center gap-3">
-            <span className="flex items-center gap-2 font-display text-xl font-semibold tracking-tight lg:text-3xl">
-              <Box className="size-6 text-accent lg:size-8" strokeWidth={2.2} aria-hidden />
+            <span className="flex items-center gap-2 font-display text-xl font-semibold tracking-tight text-highlight lg:text-3xl">
+              <Box className="size-6 lg:size-8" strokeWidth={2.2} aria-hidden />
               kubo
             </span>
-            <span className="hidden rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-medium text-accent sm:inline">
+            <span className="hidden rounded-full bg-highlight px-2.5 py-0.5 text-xs font-medium text-accent sm:inline">
               protótipo
             </span>
           </div>
           <div className="flex items-center gap-2">
             <CreditsButton />
             {view !== "create" && (
-              <Button variant="ghost" size="sm" aria-label="Recomeçar" onClick={reset}>
+              <Button
+                variant="ghost"
+                size="sm"
+                aria-label="Recomeçar"
+                className="text-white hover:bg-white/15 hover:text-white focus-visible:outline-highlight"
+                onClick={reset}
+              >
                 <RotateCcw />
                 <span className="hidden sm:inline">Recomeçar</span>
               </Button>

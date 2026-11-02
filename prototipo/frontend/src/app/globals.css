@@ -4,15 +4,17 @@
 
 @layer base {
   :root {
-    --background: 246 245 241;
+    --background: 255 255 255;
     --surface: 255 255 255;
-    --sunken: 238 236 230;
-    --ink: 22 22 20;
-    --muted: 112 110 104;
-    --line: 226 223 215;
-    --accent: 255 92 40;
-    --accent-hover: 236 76 24;
-    --accent-soft: 255 236 228;
+    --sunken: 244 244 244;
+    --ink: 20 20 20;
+    --muted: 107 107 107;
+    --line: 229 229 229;
+    --accent: 124 58 237;
+    --accent-soft: 240 233 255;
+    /* Neon yellow: nearly invisible on white, so use it as a fill or on purple. */
+    --highlight: 250 255 0;
+    --highlight-hover: 240 245 0;
     --danger: 200 40 40;
   }
 

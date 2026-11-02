@@ -220,7 +220,12 @@ function ImageActions({
   return (
     <div className="space-y-6 pb-10 lg:pb-0">
       <div>
-        <p className="text-2xl font-semibold lg:text-xl">A partir de {formatPrice(LOWEST_PRICE)}</p>
+        <p className="text-2xl font-semibold lg:text-xl">
+          A partir de{" "}
+          <span className="rounded-md bg-highlight px-2 py-0.5 text-accent">
+            {formatPrice(LOWEST_PRICE)}
+          </span>
+        </p>
         <p className="mt-3 text-muted lg:text-sm">
           O modelo 3D será construído a partir desta imagem. Quer mudar algo? Edite a imagem antes
           de gerar.
@@ -303,7 +308,7 @@ function ProgressNotice({ progress, elapsed }: { progress: Progress; elapsed: nu
               )}
             >
               {index < currentStep && (
-                <CheckCircle2 className="size-5 shrink-0 text-accent" aria-hidden />
+                <CheckCircle2 className="size-5 shrink-0 fill-highlight text-accent" aria-hidden />
               )}
               {isCurrent && (
                 <Loader2 className="size-5 shrink-0 animate-spin text-accent" aria-hidden />
@@ -366,7 +371,7 @@ function BuildError({
     <div className="flex size-full flex-col items-center justify-center gap-4 p-8 text-center">
       <p className="font-display text-xl font-semibold">Não conseguimos gerar o modelo</p>
       <p className="text-sm text-muted">{message || "Tente de novo em instantes."}</p>
-      <Button onClick={onRetry} pending={isRetrying}>
+      <Button variant="accent" onClick={onRetry} pending={isRetrying}>
         <RotateCw />
         Tentar de novo
       </Button>
