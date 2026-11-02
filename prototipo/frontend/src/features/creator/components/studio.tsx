@@ -1,7 +1,17 @@
 "use client";
 
 import { useIsMutating } from "@tanstack/react-query";
-import { ArrowLeft, Box, Pause, Pencil, Play, RotateCw } from "lucide-react";
+import {
+  ArrowLeft,
+  Box,
+  CheckCircle2,
+  Circle,
+  Loader2,
+  Pause,
+  Pencil,
+  Play,
+  RotateCw,
+} from "lucide-react";
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 
@@ -20,13 +30,22 @@ const ModelViewer = dynamic(
   { ssr: false, loading: () => <div className="skeleton size-full" /> },
 );
 
-const PROGRESS_MESSAGES = [
-  "Lendo a imagem…",
-  "Esculpindo a forma…",
-  "Refinando os detalhes…",
-  "Pintando a superfície…",
-  "Quase lá…",
+// Paced by time, not by the real progress: the provider does not report any.
+const BUILD_STEPS = [
+  "Estudando cada detalhe",
+  "Aquecendo o bico da impressora",
+  "Empilhando camadas",
+  "Dando os últimos retoques",
 ];
+const SECONDS_PER_STEP = 7;
+// The 3D can take from 26 to 92 s: the last step keeps changing so it never looks stuck.
+const LAST_STEP_PHRASES = [
+  "Dando os últimos retoques",
+  "Conferindo cada ângulo",
+  "Caprichando no acabamento",
+  "Quase lá, está ficando bom",
+];
+const SECONDS_PER_PHRASE = 8;
 
 const TABS: Array<{ id: StudioTab; label: string }> = [
   { id: "2d", label: "2D" },
@@ -189,25 +208,67 @@ function ImageActions({
   );
 }
 
-function BuildingNotice() {
-  return (
-    <div className="animate-fade-in space-y-2">
-      <h2 className="font-display text-3xl font-semibold tracking-tight">Criando seu modelo 3D</h2>
-      <p className="text-muted">Isso leva cerca de um minuto.</p>
-    </div>
-  );
-}
-
-function Building({ image }: { image: StoredImage }) {
+/** Seconds since the 3D task started, updated every second. */
+function useBuildElapsed() {
   const startedAt = useCreatorStore((state) => state.modelStartedAt);
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
   }, []);
-  const elapsed = Math.max(0, Math.floor((now - (startedAt ?? now)) / 1000));
-  const message =
-    PROGRESS_MESSAGES[Math.min(Math.floor(elapsed / 8), PROGRESS_MESSAGES.length - 1)];
+  return Math.max(0, Math.floor((now - (startedAt ?? now)) / 1000));
+}
+
+function BuildingNotice() {
+  const elapsed = useBuildElapsed();
+  const lastStep = BUILD_STEPS.length - 1;
+  const currentStep = Math.min(Math.floor(elapsed / SECONDS_PER_STEP), lastStep);
+  const lastStepSeconds = Math.max(0, elapsed - lastStep * SECONDS_PER_STEP);
+  const phrase =
+    LAST_STEP_PHRASES[Math.floor(lastStepSeconds / SECONDS_PER_PHRASE) % LAST_STEP_PHRASES.length];
+
+  return (
+    <div className="animate-fade-in space-y-5">
+      <div className="space-y-2">
+        <h2 className="font-display text-3xl font-semibold tracking-tight">
+          Criando seu modelo 3D
+        </h2>
+        <p className="text-muted">Isso leva cerca de um minuto.</p>
+      </div>
+      <ol className="space-y-3">
+        {BUILD_STEPS.map((step, index) => {
+          const isCurrent = index === currentStep;
+          const label = isCurrent && index === lastStep ? phrase : step;
+          return (
+            <li
+              key={step}
+              aria-current={isCurrent ? "step" : undefined}
+              className={cn(
+                "flex items-center gap-3",
+                isCurrent && "font-medium",
+                index > currentStep && "text-muted",
+              )}
+            >
+              {index < currentStep && (
+                <CheckCircle2 className="size-5 shrink-0 text-accent" aria-hidden />
+              )}
+              {isCurrent && (
+                <Loader2 className="size-5 shrink-0 animate-spin text-accent" aria-hidden />
+              )}
+              {index > currentStep && <Circle className="size-5 shrink-0 text-line" aria-hidden />}
+              <span key={label} className="animate-fade-in">
+                {label}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+  );
+}
+
+function Building({ image }: { image: StoredImage }) {
+  const elapsed = useBuildElapsed();
 
   return (
     <div className="flex size-full flex-col items-center justify-center text-center">
@@ -215,10 +276,6 @@ function Building({ image }: { image: StoredImage }) {
         {/* eslint-disable-next-line @next/next/no-img-element -- dynamic media served by Django */}
         <img src={image.url} alt="" className="size-full object-contain opacity-80" />
         <div className="absolute inset-x-0 top-0 h-16 animate-scan bg-gradient-to-b from-transparent via-accent/25 to-transparent" />
-      </div>
-      <p className="mt-5 text-muted">{message}</p>
-      <div className="mt-4 h-1 w-56 overflow-hidden rounded-full bg-sunken">
-        <div className="h-full w-1/3 animate-indeterminate rounded-full bg-accent" />
       </div>
       <p className="mt-3 font-mono text-xs text-muted" data-testid="elapsed">
         {elapsed}s
