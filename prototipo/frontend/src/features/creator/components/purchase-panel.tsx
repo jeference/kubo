@@ -1,12 +1,11 @@
 "use client";
 
-import { Download, Minus, Plus } from "lucide-react";
+import { Minus, Plus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { DEFAULT_SIZE, formatPrice, SIZES } from "@/features/creator/lib/sizes";
-import { useCreatorStore } from "@/features/creator/store";
 import { cn } from "@/lib/utils";
 
 const MAX_QUANTITY = 10;
@@ -17,8 +16,7 @@ function showUnavailable() {
 }
 
 /** Visual only: nothing here reaches the backend yet. */
-export function PurchasePanel({ glbUrl }: { glbUrl: string }) {
-  const reset = useCreatorStore((state) => state.reset);
+export function PurchasePanel() {
   const [sizeId, setSizeId] = useState<string>(DEFAULT_SIZE.id);
   const [quantity, setQuantity] = useState(1);
   const size = SIZES.find((s) => s.id === sizeId) ?? DEFAULT_SIZE;
@@ -101,19 +99,6 @@ export function PurchasePanel({ glbUrl }: { glbUrl: string }) {
           onClick={showUnavailable}
         >
           Comprar agora
-        </Button>
-      </div>
-
-      <div className="flex flex-wrap gap-2 border-t border-line pt-4">
-        <Button variant="ghost" size="sm" asChild>
-          <a href={glbUrl} download>
-            <Download />
-            Baixar GLB
-          </a>
-        </Button>
-        <Button variant="ghost" size="sm" onClick={reset}>
-          <Plus />
-          Criar outro objeto
         </Button>
       </div>
     </div>

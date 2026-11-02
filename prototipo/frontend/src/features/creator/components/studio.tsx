@@ -104,7 +104,7 @@ export function Studio() {
 
         <aside className="lg:pt-2">
           {glbUrl ? (
-            <PurchasePanel glbUrl={glbUrl} />
+            <PurchasePanel />
           ) : isBuilding ? (
             <BuildingNotice />
           ) : (
