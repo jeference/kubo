@@ -16,6 +16,7 @@ import { useCreatorStore } from "@/features/creator/store";
 import { cn } from "@/lib/utils";
 
 const MAX_INSTRUCTION = 200;
+const SWIPE_THRESHOLD = 20;
 
 export function EditModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   return (
@@ -24,7 +25,7 @@ export function EditModal({ open, onClose }: { open: boolean; onClose: () => voi
         <Dialog.Overlay className="fixed inset-0 z-40 bg-black/70 backdrop-blur-md" />
         <Dialog.Content
           aria-describedby={undefined}
-          className="fixed inset-0 z-50 flex animate-fade-in flex-col gap-3 p-4 sm:px-10 md:px-16 lg:px-24"
+          className="fixed inset-0 z-50 flex animate-fade-in flex-col bg-black lg:gap-3 lg:bg-transparent lg:p-4 lg:px-24"
         >
           {/* Mounted only while open, so each opening starts on the current image. */}
           <Editor onClose={onClose} />
@@ -43,17 +44,21 @@ function Editor({ onClose }: { onClose: () => void }) {
   const [selectedId, setSelectedId] = useState(currentImage?.id ?? null);
   const [draft, setDraft] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // Phones only: the conversation is a drawer, so the image stays large until it is asked for.
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const handleStartY = useRef(0);
 
   const selected = versions.find((v) => v.image.id === selectedId)?.image ?? currentImage;
   const edits = versions.filter((v) => v.instruction !== null);
   const newestFirst = [...versions].reverse();
   const hasChange = selected !== null && selected.id !== currentImage?.id;
+  const hasChat = edits.length > 0 || edit.isPending || errorMessage !== null;
   const urlOf = (id: string | null) => versions.find((v) => v.image.id === id)?.image.url;
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ block: "end" });
-  }, [edits.length, edit.isPending, errorMessage]);
+  }, [edits.length, edit.isPending, errorMessage, isChatOpen]);
 
   function send() {
     const instruction = draft.trim();
@@ -63,10 +68,14 @@ function Editor({ onClose }: { onClose: () => void }) {
     edit.mutate(
       { source: selected, instruction },
       {
-        onSuccess: (image) => setSelectedId(image.id),
+        onSuccess: (image) => {
+          setSelectedId(image.id);
+          if (image.warning) setIsChatOpen(true);
+        },
         onError: (error) => {
           setErrorMessage(error.message);
           setDraft(instruction);
+          setIsChatOpen(true);
         },
       },
     );
@@ -84,7 +93,7 @@ function Editor({ onClose }: { onClose: () => void }) {
 
   return (
     <>
-      <header className="mx-auto flex w-full max-w-6xl shrink-0 items-center justify-between">
+      <header className="mx-auto flex w-full max-w-6xl shrink-0 items-center justify-between px-4 py-3 lg:p-0">
         <div className="flex items-center gap-3 text-white">
           <Dialog.Close
             aria-label="Voltar"
@@ -99,8 +108,8 @@ function Editor({ onClose }: { onClose: () => void }) {
         </Button>
       </header>
 
-      <div className="mx-auto grid min-h-0 w-full max-w-6xl flex-1 grid-rows-2 gap-3 lg:grid-cols-[3fr_2fr] lg:grid-rows-1">
-        <section className="flex min-h-0 flex-col gap-2 rounded-2xl bg-surface p-3">
+      <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col lg:grid lg:grid-cols-[3fr_2fr] lg:gap-3">
+        <section className="flex min-h-[35dvh] flex-1 flex-col gap-2 pb-2 lg:min-h-0 lg:rounded-2xl lg:bg-surface lg:p-3">
           <div className="relative min-h-0 flex-1">
             {selected && (
               // eslint-disable-next-line @next/next/no-img-element -- dynamic media served by Django
@@ -115,8 +124,8 @@ function Editor({ onClose }: { onClose: () => void }) {
             )}
             {edit.isPending && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
-                <p className="text-sm font-medium">Editando sua imagem…</p>
-                <div className="h-1.5 w-56 overflow-hidden rounded-full bg-sunken">
+                <p className="text-sm font-medium text-white lg:text-ink">Editando sua imagem…</p>
+                <div className="h-1.5 w-56 overflow-hidden rounded-full bg-white/25 lg:bg-sunken">
                   <div className="h-full w-1/3 animate-indeterminate rounded-full bg-accent" />
                 </div>
                 <Button variant="outline" size="sm" onClick={cancel}>
@@ -125,7 +134,12 @@ function Editor({ onClose }: { onClose: () => void }) {
               </div>
             )}
           </div>
-          <div className="flex shrink-0 gap-2 overflow-x-auto p-0.5">
+          <div
+            className={cn(
+              "flex shrink-0 gap-2 overflow-x-auto px-3 py-0.5 lg:p-0.5",
+              versions.length < 2 && "hidden lg:flex",
+            )}
+          >
             {newestFirst.map(({ image }, index) => (
               <button
                 key={image.id}
@@ -135,7 +149,7 @@ function Editor({ onClose }: { onClose: () => void }) {
                 aria-pressed={image.id === selected?.id}
                 onClick={() => setSelectedId(image.id)}
                 className={cn(
-                  "size-14 shrink-0 overflow-hidden rounded-xl border bg-surface transition sm:size-16",
+                  "size-12 shrink-0 overflow-hidden rounded-xl border bg-surface transition lg:size-16",
                   image.id === selected?.id
                     ? "border-accent ring-1 ring-accent"
                     : "border-line hover:border-ink/30",
@@ -148,8 +162,33 @@ function Editor({ onClose }: { onClose: () => void }) {
           </div>
         </section>
 
-        <section className="flex min-h-0 flex-col gap-3 rounded-2xl bg-background p-4">
-          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
+        <section className="flex min-h-0 flex-col gap-3 rounded-t-2xl bg-background p-4 lg:rounded-2xl">
+          {hasChat && (
+            <button
+              type="button"
+              aria-label={isChatOpen ? "Ocultar conversa" : "Mostrar conversa"}
+              aria-expanded={isChatOpen}
+              onPointerDown={(event) => {
+                handleStartY.current = event.clientY;
+              }}
+              onPointerUp={(event) => {
+                const moved = event.clientY - handleStartY.current;
+                setIsChatOpen(Math.abs(moved) > SWIPE_THRESHOLD ? moved < 0 : !isChatOpen);
+              }}
+              // Pointers are handled above: `detail` is 0 only for the keyboard.
+              onClick={(event) => event.detail === 0 && setIsChatOpen(!isChatOpen)}
+              className="-mt-3 flex h-6 shrink-0 touch-none items-center justify-center lg:hidden"
+            >
+              <span className="h-1 w-9 rounded-full bg-ink/25" />
+            </button>
+          )}
+
+          <div
+            className={cn(
+              "min-h-0 space-y-4 overflow-y-auto pr-1 lg:max-h-none lg:flex-1",
+              isChatOpen ? "max-h-[38dvh]" : "hidden lg:block",
+            )}
+          >
             {edits.map((version) => (
               <div key={version.image.id} className="space-y-3">
                 <UserMessage
@@ -188,7 +227,7 @@ function Editor({ onClose }: { onClose: () => void }) {
               Ao concluir, o modelo 3D atual será descartado e você poderá gerar outro.
             </p>
           )}
-          <div className="shrink-0 rounded-xl bg-surface p-3">
+          <div className="flex shrink-0 items-end gap-2 rounded-xl bg-surface p-3 lg:block">
             <textarea
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
@@ -198,13 +237,14 @@ function Editor({ onClose }: { onClose: () => void }) {
                   send();
                 }
               }}
-              rows={2}
+              rows={1}
               maxLength={MAX_INSTRUCTION}
               aria-label="Descreva sua ideia"
               placeholder="Descreva sua ideia…"
-              className="w-full resize-none bg-transparent text-sm outline-none placeholder:text-muted/70"
+              // text-base on phones: iOS zooms the page when focusing a smaller field.
+              className="max-h-24 min-w-0 flex-1 resize-none bg-transparent py-1 text-base outline-none [field-sizing:content] placeholder:text-muted/70 lg:min-h-10 lg:w-full lg:py-0 lg:text-sm"
             />
-            <div className="mt-1 flex items-center justify-end gap-2">
+            <div className="flex shrink-0 items-center justify-end gap-2 lg:mt-1">
               <span className="rounded-full bg-sunken px-2 py-0.5 text-xs tabular-nums text-muted">
                 {draft.length}/{MAX_INSTRUCTION}
               </span>
