@@ -103,7 +103,7 @@ def test_edit_image_sends_source_and_wrapped_instruction(client, monkeypatch):
     assert response.data["cost"] == 0.002
     image, prompt = calls[0]
     assert image == _media_path(source["url"]).read_bytes()
-    assert prompt.startswith("Tira o chapéu. Keep everything else")
+    assert "Tira o chapéu. Keep everything else" in prompt
 
 
 def test_edit_image_unknown_image(client):
@@ -185,5 +185,19 @@ def test_credits(client):
 def test_build_image_prompt_wraps_description():
     prompt = services.build_image_prompt(prompt="  Uma coruja {de} óculos. ")
 
-    assert prompt.startswith("Uma coruja {de} óculos, as a detailed 3D figurine")
+    assert "Uma coruja {de} óculos, as a detailed 3D figurine" in prompt
     assert prompt.endswith("isolated on a plain white background")
+
+
+@pytest.mark.parametrize(
+    "prompt",
+    [
+        services.build_image_prompt(prompt="uma coruja"),
+        services.build_edit_prompt(instruction="tira o chapéu"),
+    ],
+    ids=["image", "edit"],
+)
+def test_prompts_limit_colors_to_the_filaments(prompt):
+    assert f"at most {settings.MAX_PRINT_COLORS} of them" in prompt
+    assert all(hex_code in prompt for hex_code in settings.FILAMENT_COLORS.values())
+    assert "true-to-life" not in prompt

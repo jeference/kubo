@@ -127,25 +127,59 @@ if TRELLIS_PRESET not in TRELLIS_PRESETS:
     )
 TRELLIS_SETTINGS = TRELLIS_PRESETS[TRELLIS_PRESET]
 
+MAX_PRINT_COLORS = 4
+# Colors we have PLA filament for: name sent to the image model -> hex. Starting values
+# are the common PLA colors; replace them with the real stock.
+FILAMENT_COLORS = {
+    "white": "#FFFFFF",
+    "black": "#000000",
+    "gray": "#8E9089",
+    "red": "#C12E1F",
+    "orange": "#FF6A13",
+    "yellow": "#F4EE2A",
+    "green": "#00AE42",
+    "blue": "#0A2989",
+    "purple": "#5E43B7",
+    "pink": "#F5547C",
+    "brown": "#9D432C",
+    "beige": "#F7E6DE",
+}
+# Opens every prompt that produces a 2D image; at the end of the prompt, GPT Image 2 kept the
+# off-list colors of requests and references. Tested 2026-11-02, one image per case: off-list
+# colors were replaced in 3 of 4 cases, but only 1 of 6 images stayed within the limit, so
+# this lowers the color count without guaranteeing it. No braces: templates go through .format().
+_COLOR_RULE = (
+    "This figurine is 3D printed, and only these filament colors exist: "
+    + ", ".join(f"{name} ({hex_code})" for name, hex_code in FILAMENT_COLORS.items())
+    + f". No other color can be printed. Use at most {MAX_PRINT_COLORS} of them on the whole "
+    "figurine, counting the base and small details such as eyes, mouth and buttons. Do not "
+    "reproduce colors from the request or the reference that are not on the list, such as "
+    "turquoise, teal, gold, tan or light blue: repaint them in the closest listed color, "
+    "even if that changes how it looks. Each part is one uniform matte color but stays a "
+    "sculpted 3D form with volume, never a flat drawing. The white background does not count "
+    "as a color. Do not draw the list, color swatches or any text.\n\n"
+)
+
 GENERATION = {
     "IMAGES_PER_PROMPT": 1,
     "IMAGE_SIZE": 1024,
     # Wraps the user's description to match the 2D references of Jujubit/Tripo, tuned
     # against 18 of their images (2026-10-31): a sculpted figurine look (fur and hair
-    # as solid shapes, not strands), faithful colors, the whole object centered, and a
+    # as solid shapes, not strands), the whole object centered, and a
     # near-white background (#FDFDFD; theirs is #FCFCFC). FLUX.2 [klein] overreacts to
     # color words: "vivid"/"bright" turn objects rainbow, "natural" goes sepia,
     # "pristine" drains color; "studio lighting" adds a gray vignette.
     # Placeholders: {prompt} and {prompt_lower}.
     "PROMPT_TEMPLATE": (
-        "{prompt}, as a detailed 3D figurine with rich, true-to-life colors, "
-        "shown whole, centered and filling the frame, isolated on a plain white background"
+        _COLOR_RULE + "{prompt}, as a detailed 3D figurine, shown whole, centered and filling "
+        "the frame, isolated on a plain white background"
     ),
     # Sent with the current image as reference. Tested 2026-11-01: vague requests ("make it
     # prettier") otherwise lose the white background, which the 3D step relies on.
     # Placeholder: {instruction}.
     "EDIT_PROMPT_TEMPLATE": (
-        "{instruction}. Keep everything else exactly the same, on a plain white background"
+        _COLOR_RULE
+        + "{instruction}. Keep everything else exactly the same, on a plain white background"
     ),
 }
 
