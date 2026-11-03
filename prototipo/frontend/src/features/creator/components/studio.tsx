@@ -393,7 +393,7 @@ function Viewer({ glbUrl }: { glbUrl: string }) {
       >
         {autoRotate ? <Pause /> : <Play />}
       </Button>
-      <ModelViewer url={glbUrl} autoRotate={autoRotate} />
+      <ModelViewer url={glbUrl} autoRotate={autoRotate} preview />
     </>
   );
 }

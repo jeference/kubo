@@ -30,7 +30,16 @@ function StudioLight() {
   return null;
 }
 
-export function ModelViewer({ url, autoRotate }: { url: string; autoRotate: boolean }) {
+export function ModelViewer({
+  url,
+  autoRotate,
+  preview = false,
+}: {
+  url: string;
+  autoRotate: boolean;
+  /** Farther framing and no zoom, so the customer sees the shape without inspecting mesh detail. */
+  preview?: boolean;
+}) {
   return (
     <Canvas
       camera={{ position: [0, 0.6, 3], fov: 35 }}
@@ -41,11 +50,22 @@ export function ModelViewer({ url, autoRotate }: { url: string; autoRotate: bool
       <color attach="background" args={["#f4f4f4"]} />
       <StudioLight />
       <Suspense fallback={null}>
-        <Stage environment={null} intensity={0} shadows="contact" adjustCamera={1.2}>
+        <Stage
+          environment={null}
+          intensity={0}
+          shadows="contact"
+          adjustCamera={preview ? 1.7 : 1.2}
+        >
           <Model url={url} />
         </Stage>
       </Suspense>
-      <OrbitControls makeDefault autoRotate={autoRotate} autoRotateSpeed={1.5} enablePan={false} />
+      <OrbitControls
+        makeDefault
+        autoRotate={autoRotate}
+        autoRotateSpeed={1.5}
+        enablePan={false}
+        enableZoom={!preview}
+      />
     </Canvas>
   );
 }
