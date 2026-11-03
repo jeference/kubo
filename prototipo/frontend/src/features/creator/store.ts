@@ -2,11 +2,14 @@
 
 import { create } from "zustand";
 
-import type { ImageVersion, StoredImage, StudioTab, View } from "@/features/creator/types";
+import type { ImageVersion, StoredImage, Style, StudioTab, View } from "@/features/creator/types";
 
 type CreatorState = {
   view: View;
   prompt: string;
+  style: Style;
+  /** Photo attached in the prompt step; kept so going back or an error does not lose it. */
+  photo: File | null;
   /** Every version of the image, oldest first: the original, then one per edit. */
   versions: ImageVersion[];
   /** The version shown in the studio, which the 3D model is built from. */
@@ -20,6 +23,8 @@ type CreatorState = {
 
   setView: (view: View) => void;
   setPrompt: (prompt: string) => void;
+  setStyle: (style: Style) => void;
+  setPhoto: (photo: File | null) => void;
   setActiveTab: (tab: StudioTab) => void;
   /** A new starting image: drops the versions and the 3D model of the previous one. */
   startImage: (image: StoredImage) => void;
@@ -35,6 +40,8 @@ type CreatorState = {
 const initialState = {
   view: "create" as View,
   prompt: "",
+  style: "free" as Style,
+  photo: null,
   versions: [],
   currentImage: null,
   activeTab: "2d" as StudioTab,
@@ -50,6 +57,8 @@ export const useCreatorStore = create<CreatorState>()((set) => ({
 
   setView: (view) => set({ view }),
   setPrompt: (prompt) => set({ prompt }),
+  setStyle: (style) => set({ style }),
+  setPhoto: (photo) => set({ photo }),
   setActiveTab: (activeTab) => set({ activeTab }),
   startImage: (image) =>
     set({

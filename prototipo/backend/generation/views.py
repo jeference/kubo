@@ -19,7 +19,10 @@ class GenerateImagesView(APIView):
     def post(self, request):
         serializer = GenerateImagesSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        images = services.generate_images(prompt=serializer.validated_data["prompt"])
+        images = services.generate_images(
+            prompt=serializer.validated_data["prompt"],
+            style=serializer.validated_data["style"],
+        )
         return Response(
             StoredImageSerializer(images, many=True).data, status=status.HTTP_201_CREATED
         )
@@ -41,7 +44,11 @@ class UploadImageView(APIView):
     def post(self, request):
         serializer = ImageFileSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        image = services.save_upload(raw=serializer.validated_data["image"].read())
+        image = services.standardize_upload(
+            raw=serializer.validated_data["image"].read(),
+            prompt=serializer.validated_data["prompt"],
+            style=serializer.validated_data["style"],
+        )
         return Response(StoredImageSerializer(image).data, status=status.HTTP_201_CREATED)
 
 

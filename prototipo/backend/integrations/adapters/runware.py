@@ -114,7 +114,7 @@ class RunwareGenerationAdapter(GenerationPort):
         )
         item = next((d for d in data if d.get("imageDataURI")), None)
         if item is None:
-            raise UpstreamUnavailable("Runware não devolveu a imagem editada.")
+            raise UpstreamUnavailable("Runware não devolveu a imagem.")
         return GeneratedImage(data=_from_data_uri(item["imageDataURI"]), cost=item.get("cost"))
 
     def submit_model(self, *, image: bytes) -> str:

@@ -61,6 +61,109 @@ def test_upload_stores_png(client):
     assert Image.open(_media_path(response.data["url"])).format == "PNG"
 
 
+def test_upload_standardizes_the_photo(client, monkeypatch):
+    calls = []
+
+    def fake_edit(self, *, image, prompt, size):
+        calls.append((image, prompt))
+        return GeneratedImage(data=_png_bytes("white"), cost=0.014)
+
+    monkeypatch.setattr(runware_stub.StubGenerationAdapter, "edit_image", fake_edit)
+
+    response = client.post(
+        "/api/generation/images/upload/", {"image": _png_upload()}, format="multipart"
+    )
+
+    assert response.data["cost"] == 0.014
+    stored = Image.open(_media_path(response.data["url"])).convert("RGB")
+    assert stored.getpixel((0, 0)) == (255, 255, 255)  # the result, not the red photo
+    image, prompt = calls[0]
+    assert Image.open(io.BytesIO(image)).convert("RGB").getpixel((0, 0)) == (255, 0, 0)
+    assert prompt == settings.GENERATION["STYLES"]["free"]["STANDARDIZE_PROMPT_TEMPLATE"]
+
+
+def test_generate_images_uses_the_chosen_style(client, monkeypatch):
+    calls = []
+
+    def fake_generate(self, *, prompt, count, size):
+        calls.append(prompt)
+        return [GeneratedImage(data=_png_bytes("white"), cost=0)]
+
+    monkeypatch.setattr(runware_stub.StubGenerationAdapter, "generate_images", fake_generate)
+
+    response = client.post("/api/generation/images/", {"prompt": "uma raposa", "style": "chibi"})
+
+    assert response.status_code == 201
+    assert "uma raposa, as a Japanese chibi anime collectible figure" in calls[0]
+
+
+def test_upload_uses_the_chosen_style(client, monkeypatch):
+    calls = []
+
+    def fake_edit(self, *, image, prompt, size):
+        calls.append(prompt)
+        return GeneratedImage(data=_png_bytes("white"), cost=0)
+
+    monkeypatch.setattr(runware_stub.StubGenerationAdapter, "edit_image", fake_edit)
+
+    client.post(
+        "/api/generation/images/upload/",
+        {"image": _png_upload(), "style": "mini-pop"},
+        format="multipart",
+    )
+    client.post(
+        "/api/generation/images/upload/",
+        {"image": _png_upload(), "style": "pixar", "prompt": "de chapéu"},
+        format="multipart",
+    )
+
+    assert "into a collectible vinyl bobble-head toy figure:" in calls[0]
+    assert "from a modern animated family movie, with this one change: de chapéu." in calls[1]
+
+
+def test_style_defaults_to_free(client, monkeypatch):
+    calls = []
+
+    def fake_generate(self, *, prompt, count, size):
+        calls.append(prompt)
+        return [GeneratedImage(data=_png_bytes("white"), cost=0)]
+
+    monkeypatch.setattr(runware_stub.StubGenerationAdapter, "generate_images", fake_generate)
+
+    client.post("/api/generation/images/", {"prompt": "uma raposa"})
+
+    assert "uma raposa, as a detailed 3D figurine" in calls[0]
+
+
+@pytest.mark.parametrize("url", ["/api/generation/images/", "/api/generation/images/upload/"])
+def test_unknown_style_is_rejected(client, url):
+    response = client.post(
+        url,
+        {"prompt": "uma raposa", "image": _png_upload(), "style": "cubismo"},
+        format="multipart",
+    )
+
+    assert response.status_code == 400
+
+
+def test_upload_passes_the_optional_prompt(client, monkeypatch):
+    calls = []
+
+    def fake_edit(self, *, image, prompt, size):
+        calls.append(prompt)
+        return GeneratedImage(data=_png_bytes("white"), cost=0)
+
+    monkeypatch.setattr(runware_stub.StubGenerationAdapter, "edit_image", fake_edit)
+
+    client.post(
+        "/api/generation/images/upload/",
+        {"image": _png_upload(), "prompt": " de chapéu {azul}. "},
+        format="multipart",
+    )
+
+    assert "with this one change: de chapéu {azul}. Apart" in calls[0]
+
+
 def _png_bytes(color):
     buffer = io.BytesIO()
     Image.new("RGB", (64, 64), color).save(buffer, format="PNG")
@@ -130,14 +233,14 @@ def test_edit_image_validates_instruction(client, instruction):
 def test_edit_image_warns_only_when_the_edit_loses_the_background(
     client, monkeypatch, source_color, edited_color, warns
 ):
-    source = _upload(client, color=source_color)
+    source_id = services._store_image(_png_bytes(source_color)).id
     monkeypatch.setattr(
         runware_stub.StubGenerationAdapter,
         "edit_image",
         lambda self, **_: GeneratedImage(data=_png_bytes(edited_color), cost=0),
     )
 
-    response = client.post(f"/api/generation/images/{source['id']}/edit/", {"instruction": "x"})
+    response = client.post(f"/api/generation/images/{source_id}/edit/", {"instruction": "x"})
 
     assert bool(response.data["warning"]) is warns
 
@@ -194,10 +297,27 @@ def test_build_image_prompt_wraps_description():
     [
         services.build_image_prompt(prompt="uma coruja"),
         services.build_edit_prompt(instruction="tira o chapéu"),
+        services.build_standardize_prompt(request=""),
+        services.build_standardize_prompt(request="de chapéu"),
     ],
-    ids=["image", "edit"],
+    ids=["image", "edit", "upload", "upload_with_request"],
 )
 def test_prompts_limit_colors_to_the_filaments(prompt):
     assert f"at most {settings.MAX_PRINT_COLORS} of them" in prompt
     assert all(hex_code in prompt for hex_code in settings.FILAMENT_COLORS.values())
     assert "true-to-life" not in prompt
+
+
+@pytest.mark.parametrize("style", list(settings.GENERATION["STYLES"]))
+def test_every_style_builds_its_three_prompts(style):
+    prompts = [
+        services.build_image_prompt(prompt="uma {coruja}", style=style),
+        services.build_standardize_prompt(request="", style=style),
+        services.build_standardize_prompt(request="de {chapéu}", style=style),
+    ]
+
+    assert "uma {coruja}" in prompts[0]
+    assert "de {chapéu}" in prompts[2]
+    for prompt in prompts:
+        assert f"at most {settings.MAX_PRINT_COLORS} of them" in prompt
+        assert "plain white background" in prompt

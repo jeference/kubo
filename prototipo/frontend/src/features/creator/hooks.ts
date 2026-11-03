@@ -5,7 +5,7 @@ import { useRef } from "react";
 import { toast } from "sonner";
 
 import { useCreatorStore } from "@/features/creator/store";
-import type { Credits, ModelStatus, StoredImage } from "@/features/creator/types";
+import type { Credits, ModelStatus, StoredImage, Style } from "@/features/creator/types";
 import { api } from "@/lib/api";
 
 const POLL_INTERVAL_MS = 2_000;
@@ -17,6 +17,8 @@ const qk = {
 
 export const GENERATE_IMAGES_KEY = ["generate-images"];
 
+type GenerateVariables = { prompt: string; style: Style };
+
 /**
  * The prompt step fires this and immediately moves to the studio, which shows a skeleton
  * via `useIsMutating(GENERATE_IMAGES_KEY)` — so results are handled here, not per call.
@@ -24,7 +26,8 @@ export const GENERATE_IMAGES_KEY = ["generate-images"];
 export function useGenerateImages() {
   return useMutation({
     mutationKey: GENERATE_IMAGES_KEY,
-    mutationFn: (prompt: string) => api.post<StoredImage[]>("/api/generation/images/", { prompt }),
+    mutationFn: ({ prompt, style }: GenerateVariables) =>
+      api.post<StoredImage[]>("/api/generation/images/", { prompt, style }),
     onMutate: () => useCreatorStore.getState().dropModel(),
     onSuccess: (images) => {
       const store = useCreatorStore.getState();
@@ -39,19 +42,29 @@ export function useGenerateImages() {
   });
 }
 
+type UploadVariables = { file: File; prompt: string; style: Style };
+
+/** Same flow as `useGenerateImages`: the photo becomes a generated image to validate. */
 export function useUploadImage() {
   return useMutation({
-    mutationFn: (file: File) => {
+    mutationKey: GENERATE_IMAGES_KEY,
+    mutationFn: ({ file, prompt, style }: UploadVariables) => {
       const form = new FormData();
       form.append("image", file);
+      form.append("prompt", prompt);
+      form.append("style", style);
       return api.postForm<StoredImage>("/api/generation/images/upload/", form);
     },
+    onMutate: () => useCreatorStore.getState().dropModel(),
     onSuccess: (image) => {
       const store = useCreatorStore.getState();
+      store.addSpend(image.cost);
       store.startImage(image);
-      store.setView("studio");
     },
-    onError: (error) => toast.error(error.message),
+    onError: (error) => {
+      toast.error(error.message);
+      useCreatorStore.getState().setView("create");
+    },
   });
 }
 

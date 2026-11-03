@@ -1,4 +1,4 @@
-"""Generation flow: prompt (or uploaded photo) -> image -> edits -> 3D model.
+"""Generation flow: prompt and/or uploaded photo -> image -> edits -> 3D model.
 
 State lives on disk under MEDIA_ROOT (`images/<id>.png`, `models/<id>.png|.glb`), so the
 prototype needs no database: a model is "done" once its GLB has been downloaded.
@@ -91,7 +91,7 @@ def _background_is_plain(png: bytes) -> bool:
     return True
 
 
-def _normalize_png(raw: bytes) -> bytes:
+def normalize_png(raw: bytes) -> bytes:
     """Any uploaded image -> upright PNG no larger than IMAGE_SIZE, alpha preserved."""
     try:
         image = Image.open(io.BytesIO(raw))
@@ -108,9 +108,9 @@ def _normalize_png(raw: bytes) -> bytes:
     return buffer.getvalue()
 
 
-def build_image_prompt(*, prompt: str) -> str:
+def build_image_prompt(*, prompt: str, style: str = settings.DEFAULT_STYLE) -> str:
     subject = prompt.strip().rstrip(".")
-    return settings.GENERATION["PROMPT_TEMPLATE"].format(
+    return settings.GENERATION["STYLES"][style]["PROMPT_TEMPLATE"].format(
         prompt=subject, prompt_lower=subject[:1].lower() + subject[1:]
     )
 
@@ -121,9 +121,17 @@ def build_edit_prompt(*, instruction: str) -> str:
     )
 
 
-def generate_images(*, prompt: str) -> list[StoredImage]:
+def build_standardize_prompt(*, request: str, style: str = settings.DEFAULT_STYLE) -> str:
+    templates = settings.GENERATION["STYLES"][style]
+    request = request.strip().rstrip(".")
+    if not request:
+        return templates["STANDARDIZE_PROMPT_TEMPLATE"]
+    return templates["STANDARDIZE_REQUEST_PROMPT_TEMPLATE"].format(request=request)
+
+
+def generate_images(*, prompt: str, style: str = settings.DEFAULT_STYLE) -> list[StoredImage]:
     images = get_generation_port().generate_images(
-        prompt=build_image_prompt(prompt=prompt),
+        prompt=build_image_prompt(prompt=prompt, style=style),
         count=settings.GENERATION["IMAGES_PER_PROMPT"],
         size=settings.GENERATION["IMAGE_SIZE"],
     )
@@ -137,15 +145,22 @@ def edit_image(*, image_id: uuid.UUID, instruction: str) -> StoredImage:
         prompt=build_edit_prompt(instruction=instruction),
         size=settings.GENERATION["IMAGE_SIZE"],
     )
-    # Only warn when the edit is what lost the background: photos never had a plain one.
+    # Only warn when the edit is what lost the background, not if it was never plain.
     background_lost = _background_is_plain(source) and not _background_is_plain(edited.data)
     return _store_image(
         edited.data, edited.cost, warning=_BACKGROUND_LOST_WARNING if background_lost else ""
     )
 
 
-def save_upload(*, raw: bytes) -> StoredImage:
-    return _store_image(_normalize_png(raw))
+def standardize_upload(
+    *, raw: bytes, prompt: str = "", style: str = settings.DEFAULT_STYLE
+) -> StoredImage:
+    image = get_generation_port().edit_image(
+        image=normalize_png(raw),
+        prompt=build_standardize_prompt(request=prompt, style=style),
+        size=settings.GENERATION["IMAGE_SIZE"],
+    )
+    return _store_image(image.data, image.cost)
 
 
 def create_model(*, image_id: uuid.UUID) -> ModelStatus:

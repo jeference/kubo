@@ -1,0 +1,23 @@
+[
+{"id":"foto-pessoa-idoso","cat":"pessoa","mode":"foto","split":"ajuste","photo":"person.jpg"},
+{"id":"foto-pessoa-mulher-chapeu","cat":"pessoa","mode":"foto","split":"validacao","photo":"plainwoman.jpg"},
+{"id":"foto-casal","cat":"casal","mode":"foto","split":"ajuste","photo":"couple.jpg","duo":true},
+{"id":"foto-animal-cachorro","cat":"animal","mode":"foto","split":"ajuste","photo":"dog.jpg"},
+{"id":"foto-animal-gato","cat":"animal","mode":"foto","split":"validacao","photo":"cat_3.jpg"},
+{"id":"foto-objeto-carro","cat":"objeto","mode":"foto","split":"ajuste","photo":"car_0.jpg"},
+{"id":"foto-objeto-hamburguer","cat":"objeto","mode":"foto","split":"validacao","photo":"burger_0.jpg"},
+{"id":"foto-estrutura-eiffel","cat":"estrutura","mode":"foto","split":"ajuste","photo":"eiffel.jpg"},
+{"id":"foto-edge-desenho-infantil","cat":"edge","mode":"foto","split":"ajuste","photo":"drawing_0.jpg"},
+{"id":"foto-edge-pelucia","cat":"edge","mode":"foto","split":"validacao","photo":"teddy_0.jpg"},
+{"id":"foto-mais-texto-cachorro-mago","cat":"animal","mode":"foto+texto","split":"ajuste","photo":"dog.jpg","prompt":"de chapéu de mago"},
+{"id":"texto-pessoa-avo","cat":"pessoa","mode":"texto","split":"ajuste","prompt":"Uma avó de avental vermelho assando pão"},
+{"id":"texto-pessoa-skatista","cat":"pessoa","mode":"texto","split":"validacao","prompt":"Um jovem skatista de boné"},
+{"id":"texto-casal-noivos","cat":"casal","mode":"texto","split":"validacao","prompt":"Um casal de noivos de mãos dadas","duo":true},
+{"id":"texto-animal-capivara","cat":"animal","mode":"texto","split":"ajuste","prompt":"Uma capivara de chapéu de palha"},
+{"id":"texto-animal-gato-dormindo","cat":"animal","mode":"texto","split":"validacao","prompt":"Um gato laranja dormindo"},
+{"id":"texto-objeto-camera","cat":"objeto","mode":"texto","split":"ajuste","prompt":"Uma câmera fotográfica antiga"},
+{"id":"texto-objeto-caneca","cat":"objeto","mode":"texto","split":"validacao","prompt":"Uma caneca de café com alça grande"},
+{"id":"texto-estrutura-castelo","cat":"estrutura","mode":"texto","split":"ajuste","prompt":"Um castelo medieval em cima de uma rocha"},
+{"id":"texto-edge-letras-kubo","cat":"edge","mode":"texto","split":"ajuste","prompt":"A palavra KUBO em letras grandes"},
+{"id":"texto-edge-robo","cat":"edge","mode":"texto","split":"validacao","prompt":"Um robô amigável"}
+]

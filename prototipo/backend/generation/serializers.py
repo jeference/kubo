@@ -1,8 +1,18 @@
+from django.conf import settings
 from rest_framework import serializers
+
+
+def _style_field() -> serializers.ChoiceField:
+    return serializers.ChoiceField(
+        choices=list(settings.GENERATION["STYLES"]),
+        required=False,
+        default=settings.DEFAULT_STYLE,
+    )
 
 
 class GenerateImagesSerializer(serializers.Serializer):
     prompt = serializers.CharField(max_length=1000)
+    style = _style_field()
 
 
 class EditImageSerializer(serializers.Serializer):
@@ -12,6 +22,8 @@ class EditImageSerializer(serializers.Serializer):
 class ImageFileSerializer(serializers.Serializer):
     # Validated (and normalized) by Pillow in the service layer.
     image = serializers.FileField()
+    prompt = serializers.CharField(max_length=1000, required=False, allow_blank=True, default="")
+    style = _style_field()
 
 
 class CreateModelSerializer(serializers.Serializer):

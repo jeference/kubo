@@ -93,7 +93,9 @@ GENERATION_ADAPTER = env(
     default="integrations.adapters.runware.RunwareGenerationAdapter",
 )
 RUNWARE_API_KEY = env("RUNWARE_API_KEY", default="")
-RUNWARE_IMAGE_MODEL = env("RUNWARE_IMAGE_MODEL", default="runware:400@2")  # FLUX.2 [klein] 9B
+# GPT Image 2. FLUX.2 [klein] invents details from a reference image (a face inside a helmet,
+# a rider on a bicycle) however the prompt is worded.
+RUNWARE_IMAGE_MODEL = env("RUNWARE_IMAGE_MODEL", default="openai:gpt-image@2")
 RUNWARE_3D_MODEL = env("RUNWARE_3D_MODEL", default="microsoft:trellis-2@4b")
 # Quality/cost trade-off for the 3D preview. Costs are estimates (Runware bills by compute).
 # Omitted params use Trellis defaults: 12 steps per stage, 500k faces.
@@ -160,20 +162,72 @@ _COLOR_RULE = (
     "as a color. Do not draw the list, color swatches or any text.\n\n"
 )
 
+_STANDARDIZE_RULES = (
+    "same shape, pose, proportions, clothing, materials and distinctive details, and do not "
+    "add anything that is not in the reference. Show it upright in its natural orientation, "
+    "and complete any part of an object that is cut off "
+    "by the photo or hidden by the camera angle; a character shown only as a head stays only "
+    "a head. Captions, signatures and handwriting around the subject are not part of it, and "
+    "neither is whatever is underneath it, such as a pedestal, a pier, a table or the ground. "
+    "Fur and hair are sculpted as solid shapes. A standing person or character gets a small "
+    "plain round base; anything else rests directly on the background. Three-quarter view. "
+    "Show the whole figurine alone, centered and large, with a small margin on every side, "
+    "isolated on a plain white background."
+)
+
+# Pixar, Mini Pop and Chibi: tuned on GPT Image 2 against Jujubit's styles of the same name, on
+# 21 text and photo cases (2026-11-02, docs/concorrencia/jujubit/estilos/). Margin wording:
+# "filling the frame" made the figure touch the image border. "child" got a car refused by
+# OpenAI's safety system in Chibi, so it says "humanoid character".
+_STYLE_FRAME = (
+    "centered and large, with a clear white margin on every side so that nothing touches the "
+    "edge of the image,"
+)
+_STYLE_BACKDROP = (
+    "isolated on a plain white background with a soft contact shadow and no base or pedestal."
+)
+_STYLE_IGNORE = "Ignore the background and whatever is underneath the subject."
+
+_PIXAR_LOOK = "soft rounded stylized forms, clean smooth materials, a warm friendly look."
+_PIXAR_ANIMAL = (
+    "An animal stays an animal, with its natural body and a friendly cartoon face with big "
+    "expressive eyes."
+)
+# Jujubit's Pixar breaks on objects (returns the photo, or swaps in a person): not copied.
+_PIXAR_OBJECT = (
+    "If the subject is an object, vehicle or building, show only that thing as a rounded "
+    "stylized model, with no people, no face, no eyes, no arms and no legs."
+)
+
+_MINI_POP_LOOK = (
+    "an oversized wide rounded-square head about half of the total height, with a flat face, "
+    "two large solid glossy black round bead eyes set wide apart at mid-face, a tiny "
+    "triangular nose and no visible mouth, on a short neck and a small slim body with "
+    "separate arms and legs. Hair and clothes are molded as simple smooth shapes, in matte "
+    "vinyl."
+)
+_MINI_POP_OBJECT = (
+    "An object, vehicle or building becomes the character: its shape and colors form the "
+    "oversized head and the outfit of a small humanoid body."
+)
+
+_CHIBI_LOOK = (
+    "a large head about 45 percent of the total height, big glossy anime eyes with detailed "
+    "irises, a tiny nose and small mouth, a small rounded body with short limbs, hair sculpted "
+    "as big smooth locks, and detailed clothes with a polished PVC toy finish."
+)
+_CHIBI_HUMANOID = (
+    "The figure is always a stylized humanoid anime character: an animal becomes a humanoid "
+    "character with that animal's ears, tail and coloring, wearing clothes, and an object, "
+    "vehicle or building becomes a character holding a small clearly recognizable model of "
+    "it, with hair and outfit in its colors."
+)
+
+DEFAULT_STYLE = "free"
+
 GENERATION = {
     "IMAGES_PER_PROMPT": 1,
     "IMAGE_SIZE": 1024,
-    # Wraps the user's description to match the 2D references of Jujubit/Tripo, tuned
-    # against 18 of their images (2026-10-31): a sculpted figurine look (fur and hair
-    # as solid shapes, not strands), the whole object centered, and a
-    # near-white background (#FDFDFD; theirs is #FCFCFC). FLUX.2 [klein] overreacts to
-    # color words: "vivid"/"bright" turn objects rainbow, "natural" goes sepia,
-    # "pristine" drains color; "studio lighting" adds a gray vignette.
-    # Placeholders: {prompt} and {prompt_lower}.
-    "PROMPT_TEMPLATE": (
-        _COLOR_RULE + "{prompt}, as a detailed 3D figurine, shown whole, centered and filling "
-        "the frame, isolated on a plain white background"
-    ),
     # Sent with the current image as reference. Tested 2026-11-01: vague requests ("make it
     # prettier") otherwise lose the white background, which the 3D step relies on.
     # Placeholder: {instruction}.
@@ -181,6 +235,124 @@ GENERATION = {
         _COLOR_RULE
         + "{instruction}. Keep everything else exactly the same, on a plain white background"
     ),
+    # One entry per style the user can pick. PROMPT_TEMPLATE wraps a text description
+    # ({prompt}, {prompt_lower}). STANDARDIZE_PROMPT_TEMPLATE turns an uploaded photo into an
+    # image of that style; the REQUEST variant is for a photo plus a change ({request}).
+    "STYLES": {
+        "free": {
+            # Matches the 2D references of Jujubit/Tripo. Not retuned for GPT Image 2:
+            # tuned on FLUX.2 [klein], the previous image model,
+            # against 18 of their images (2026-10-31): a sculpted figurine look (fur and hair
+            # as solid shapes, not strands), the whole object centered, and a
+            # near-white background (#FDFDFD; theirs is #FCFCFC). FLUX.2 [klein] overreacts to
+            # color words: "vivid"/"bright" turn objects rainbow, "natural" goes sepia,
+            # "pristine" drains color; "studio lighting" adds a gray vignette.
+            "PROMPT_TEMPLATE": (
+                _COLOR_RULE
+                + "{prompt}, as a detailed 3D figurine, shown whole, centered and filling "
+                "the frame, isolated on a plain white background"
+            ),
+            # Tuned for GPT Image 2 against Jujubit's Free Style on 16 photos (2026-11-01).
+            # "Whatever is underneath" is what stops it copying pedestals and piers; a broader
+            # base rule put a disc under cars and chairs.
+            "STANDARDIZE_PROMPT_TEMPLATE": (
+                _COLOR_RULE
+                + "Create a clean product photograph of a detailed 3D figurine of the main "
+                "subject of this reference image. Keep it recognizably the same: "
+                + _STANDARDIZE_RULES
+            ),
+            "STANDARDIZE_REQUEST_PROMPT_TEMPLATE": (
+                _COLOR_RULE
+                + "Create a clean product photograph of a detailed 3D figurine of the main "
+                "subject of this reference image, with this one change: {request}. Apart from "
+                "that change, keep it recognizably the same: " + _STANDARDIZE_RULES
+            ),
+        },
+        "pixar": {
+            "PROMPT_TEMPLATE": (
+                f"{_COLOR_RULE}{{prompt}}, as a 3D model from a modern animated family movie: "
+                f"{_PIXAR_LOOK} A person or character has a head only slightly larger than "
+                "realistic, large expressive eyes, and is shown full body, standing with the "
+                f"arms relaxed at the sides unless described otherwise. {_PIXAR_ANIMAL} "
+                f"{_PIXAR_OBJECT} Whole subject alone, {_STYLE_FRAME} with no scene, "
+                f"{_STYLE_BACKDROP}"
+            ),
+            "STANDARDIZE_PROMPT_TEMPLATE": (
+                f"{_COLOR_RULE}Turn the main subject of this reference image into a 3D model "
+                f"from a modern animated family movie: {_PIXAR_LOOK} Keep it recognizably the "
+                "same: same features, hair, clothing, colors and distinctive details, and do "
+                "not add anyone or anything that is not in the reference. If the subject is "
+                "one person, or two people side by side, give them a head only slightly larger "
+                "than realistic and large expressive eyes, and show them full body, standing "
+                "with the arms relaxed at the sides, even if the photo shows only part of "
+                f"them. {_PIXAR_ANIMAL} {_PIXAR_OBJECT} {_STYLE_IGNORE} Whole subject alone, "
+                f"{_STYLE_FRAME} {_STYLE_BACKDROP}"
+            ),
+            "STANDARDIZE_REQUEST_PROMPT_TEMPLATE": (
+                f"{_COLOR_RULE}Turn the main subject of this reference image into a 3D model "
+                "from a modern animated family movie, with this one change: {request}. Style: "
+                f"{_PIXAR_LOOK} Apart from that change, keep it recognizably the same: same "
+                "features, hair, clothing, colors and distinctive details, and do not add "
+                "anyone or anything else. A person has a head only slightly larger than "
+                "realistic and large expressive eyes, and is shown full body, standing with "
+                f"the arms relaxed at the sides. {_PIXAR_ANIMAL} {_PIXAR_OBJECT} "
+                f"{_STYLE_IGNORE} Whole subject alone, {_STYLE_FRAME} {_STYLE_BACKDROP}"
+            ),
+        },
+        "mini-pop": {
+            "PROMPT_TEMPLATE": (
+                f"{_COLOR_RULE}{{prompt}}, as a collectible vinyl bobble-head toy figure: "
+                f"{_MINI_POP_LOOK} An animal stands upright in simple clothes. "
+                f"{_MINI_POP_OBJECT} Two people stay two people, side by side. Front view, "
+                f"standing, shown whole, {_STYLE_FRAME} {_STYLE_BACKDROP}"
+            ),
+            "STANDARDIZE_PROMPT_TEMPLATE": (
+                f"{_COLOR_RULE}Turn the main subject of this reference image into a collectible "
+                f"vinyl bobble-head toy figure: {_MINI_POP_LOOK} Keep it recognizably the same: "
+                "same hair, facial hair, skin tone, clothing, colors and distinctive details. "
+                "A person is shown full body, even if the photo shows only part of them. Two "
+                "people stay two people, side by side. An animal keeps its animal body on four "
+                f"legs, with the same oversized head and bead eyes. {_MINI_POP_OBJECT} "
+                f"{_STYLE_IGNORE} Front view, shown whole, {_STYLE_FRAME} {_STYLE_BACKDROP}"
+            ),
+            "STANDARDIZE_REQUEST_PROMPT_TEMPLATE": (
+                f"{_COLOR_RULE}Turn the main subject of this reference image into a collectible "
+                "vinyl bobble-head toy figure, with this one change: {request}. Style: "
+                f"{_MINI_POP_LOOK} Apart from that change, keep it recognizably the same: same "
+                "hair, skin tone, clothing, colors and distinctive details. An animal keeps "
+                f"its animal body, with the same oversized head and bead eyes. "
+                f"{_MINI_POP_OBJECT} {_STYLE_IGNORE} Front view, shown whole, {_STYLE_FRAME} "
+                f"{_STYLE_BACKDROP}"
+            ),
+        },
+        "chibi": {
+            "PROMPT_TEMPLATE": (
+                f"{_COLOR_RULE}{{prompt}}, as a Japanese chibi anime collectible figure: "
+                f"{_CHIBI_LOOK} The figure is always a stylized humanoid anime character. An "
+                "animal becomes a humanoid character with that animal's ears, tail and "
+                "coloring, wearing clothes. An object, vehicle or building becomes a character "
+                "holding a small clearly recognizable model of it, with hair and outfit in its "
+                "colors. Two people stay two people, side by side. Requested words appear large "
+                f"on the outfit. Standing, shown whole, {_STYLE_FRAME} {_STYLE_BACKDROP}"
+            ),
+            "STANDARDIZE_PROMPT_TEMPLATE": (
+                f"{_COLOR_RULE}Turn the main subject of this reference image into a Japanese "
+                f"chibi anime collectible figure: {_CHIBI_LOOK} Keep it recognizably the same: "
+                "same hair, skin tone, facial hair, clothing, colors and distinctive details. "
+                "A person is shown full body, even if the photo shows only part of them. Two "
+                "people stay two people, side by side. Requested words appear large on the "
+                f"outfit. {_CHIBI_HUMANOID} {_STYLE_IGNORE} Standing, shown whole, "
+                f"{_STYLE_FRAME} {_STYLE_BACKDROP}"
+            ),
+            "STANDARDIZE_REQUEST_PROMPT_TEMPLATE": (
+                f"{_COLOR_RULE}Turn the main subject of this reference image into a Japanese "
+                "chibi anime collectible figure, with this one change: {request}. Style: "
+                f"{_CHIBI_LOOK} Apart from that change, keep it recognizably the same: same "
+                f"hair, skin tone, clothing, colors and distinctive details. {_CHIBI_HUMANOID} "
+                f"{_STYLE_IGNORE} Standing, shown whole, {_STYLE_FRAME} {_STYLE_BACKDROP}"
+            ),
+        },
+    },
 }
 
 LOGGING = {
