@@ -25,7 +25,7 @@ def test_add_merges_and_totals(visitor_client):
     cart = visitor_client.get("/api/cart/").data
     assert len(cart["items"]) == 1
     assert cart["item_count"] == 3
-    assert cart["subtotal_cents"] == 3 * 12990
+    assert cart["subtotal_cents"] == 3 * 9990
 
 
 def test_quantity_limits(visitor_client):

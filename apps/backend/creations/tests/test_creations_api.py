@@ -91,7 +91,7 @@ def test_full_flow_reaches_ready_with_model_and_estimates(visitor_client):
     assert detail["blocked_size_ids"] == []
     creation = Creation.objects.get(globalid=detail["id"])
     assert creation.current_model.estimate_method == "voxel_flood"
-    assert creation.current_model.cost_estimates.count() == 8
+    assert creation.current_model.cost_estimates.count() == 5
 
 
 def test_approve_before_image_is_illegal(visitor_client):

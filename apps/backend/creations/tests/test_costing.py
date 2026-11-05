@@ -56,7 +56,7 @@ def test_flat_mesh_falls_back_or_stays_positive():
 def test_estimates_scale_and_block_below_margin():
     params = CostParameters.objects.get(version=1)
     small = ProductSize.objects.get(code="4cm")
-    big = ProductSize.objects.get(code="15cm")
+    big = ProductSize.objects.get(code="12cm")
     measure = costing.MeshMeasure(unit_volume=0.5, unit_area=3.0, method="voxel_flood")
     a = costing.estimate_for_size(measure=measure, size=small, params=params)
     b = costing.estimate_for_size(measure=measure, size=big, params=params)

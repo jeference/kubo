@@ -247,7 +247,7 @@ O pedido pago fica registrado com tudo congelado, e o cliente o vê como **Receb
 | ID | Regra |
 |---|---|
 | RN-10 | O preço depende só do tamanho e aparece desde a validação do 2D. |
-| RN-11 | A tabela atual do protótipo é de exemplo e **precisa ser substituída antes do lançamento**. |
+| RN-11 | Tabela de preços: 4 cm R$ 59,90 · 6 cm R$ 99,90 · 8 cm R$ 144,90 · 10 cm R$ 189,90 · 12 cm R$ 229,90. |
 | RN-12 | **Tamanho é a maior dimensão da peça** [Proposta]. |
 | RN-13 | **Trava de margem:** ao concluir o 3D, o sistema estima o custo do modelo em cada tamanho e bloqueia aqueles em que a margem fica abaixo do mínimo configurado. |
 | RN-14 | A estimativa é conservadora. Se o cálculo falhar, vale o pior caso, e nunca o custo zero. |
@@ -325,7 +325,7 @@ Não há metas numéricas ainda: as primeiras semanas servem para formar a linha
 | **Vender sem saber se dá para imprimir.** As malhas do Trellis são abertas, nada foi impresso, e a preparação de impressão ficou fora do MVP | **Crítico:** pedidos parados ou reembolsados | Teste real de impressão como condição de lançamento |
 | **A peça difere da prévia.** A prévia é texturizada, a impressão FDM tem até 4 cores, e o limite de cores nas imagens não é garantido (15 de 18 imagens no Mini Pop e 14 de 18 no Chibi, contadas a olho) | Alto: frustração e pedidos de reembolso | Aviso claro no produto e nos termos, e revisão antes de produzir |
 | **Abuso da geração aberta** | Alto: gasto sem venda | Cotas, limite por IP e teto global |
-| **Margem incorreta.** A tabela é de exemplo, e o cálculo de volume não foi validado com fatiador ou impressão real. Na impressão em 4 cores, a purga pode pesar mais que a geometria | Alto: venda com prejuízo, sem ninguém perceber | Calibrar com impressões reais, comparar estimado e real |
+| **Margem incorreta.** O cálculo de volume não foi validado com fatiador ou impressão real. Na impressão em 4 cores, a purga pode pesar mais que a geometria | Alto: venda com prejuízo, sem ninguém perceber | Calibrar com impressões reais, comparar estimado e real |
 | **Peça muito pequena.** 4 cm em FDM com várias cores pode não ser viável | Médio | Testar antes de lançar. Tamanhos inviáveis ficam inativos |
 | **Pedido pago sem tratamento.** Este app não tem operação: sem o app de parceiros, nenhuma tela do sistema mostra pedidos, entrega os arquivos ou registra o rastreio, e o cliente fica parado em "Recebido" | **Crítico** | O app de parceiros é o próximo passo depois do app do cliente, e vendas reais só começam com a operação pronta |
 | **Só PIX reduz a conversão** em compras de maior valor | Médio | Medir o abandono no pagamento. O gateway também oferece cartão |
@@ -352,7 +352,7 @@ Estas notas são pontos de leitura, não aconselhamento jurídico.
 - [ ] Amostras reais de modelos do Trellis impressas em cada tamanho oferecido, com tamanhos inviáveis desativados.
 - [ ] **Operação do app de parceiros pronta**, construída depois de concluído o app do cliente.
 - [ ] Definido como o modelo é transformado em peça (reparo, cores e fatiamento).
-- [ ] Tabela de preços real e parâmetros de custo calibrados com as impressões.
+- [ ] Parâmetros de custo calibrados com as impressões.
 - [ ] Prazo de produção confirmado.
 - [ ] Revisão jurídica concluída, com termos, privacidade e trocas publicados.
 - [ ] Emissão de nota fiscal definida.
