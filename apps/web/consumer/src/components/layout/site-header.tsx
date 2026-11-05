@@ -17,20 +17,15 @@ export function SiteHeader() {
         <Link
           href="/"
           aria-label="Kubo"
-          className="flex items-baseline font-display text-xl font-semibold tracking-tight text-highlight lg:text-3xl"
+          className="flex items-center text-xl lg:text-3xl"
         >
-          {/* O cubo é o K da marca: medido em em, acompanha as letras e fica centrado na altura do b. */}
+          {/* O cubo é o K da marca e o "ubo" é feito das mesmas arestas, na mesma escala. */}
           <picture className="shrink-0">
             <source srcSet="/brand/kubo-cube-still.webp" media="(prefers-reduced-motion: reduce)" />
-            <img
-              src="/brand/kubo-cube.webp"
-              alt=""
-              width={72}
-              height={72}
-              className="size-[1em] translate-y-[0.15em]"
-            />
+            <img src="/brand/kubo-cube.webp" alt="" width={72} height={72} className="size-[1em]" />
           </picture>
-          ubo
+          {/* eslint-disable-next-line @next/next/no-img-element -- tamanho em em, junto com o cubo */}
+          <img src="/brand/kubo-ubo.webp" alt="" width={156} height={144} className="h-[1em] w-auto" />
         </Link>
         <nav className="flex items-center gap-1 text-sm font-medium text-white sm:gap-2">
           <Link href="/criacoes" className="rounded-full px-3 py-2 hover:bg-white/15">
