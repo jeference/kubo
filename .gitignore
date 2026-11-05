@@ -8,3 +8,20 @@
 Thumbs.db
 *.swp
 .idea/
+
+# Dependencies and builds
+node_modules/
+.next/
+*.tsbuildinfo
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Local data
+apps/backend/_media/
+apps/backend/_pgdata/

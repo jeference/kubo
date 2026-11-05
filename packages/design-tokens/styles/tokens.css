@@ -1,0 +1,15 @@
+:root {
+  --background: 255 255 255;
+  --surface: 255 255 255;
+  --sunken: 244 244 244;
+  --ink: 20 20 20;
+  --muted: 107 107 107;
+  --line: 229 229 229;
+  --accent: 124 58 237;
+  --accent-soft: 240 233 255;
+  /* Amarelo neon: quase invisível sobre branco. Use como preenchimento ou sobre roxo. */
+  --highlight: 250 255 0;
+  --highlight-hover: 240 245 0;
+  --danger: 200 40 40;
+  --success: 31 138 76;
+}

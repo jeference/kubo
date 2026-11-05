@@ -1,0 +1,5 @@
+O pedido {{ number }} mudou de status: {{ status_label }}.
+{% if tracking_code %}
+Código de rastreio: {{ tracking_code }}
+{% endif %}
+Acompanhe: {{ tracking_url }}

@@ -1,0 +1,15 @@
+{
+  "name": "@kubo/api-types",
+  "version": "0.1.0",
+  "description": "Tipos gerados do OpenAPI do backend. Nunca edite à mão: rode `make types`.",
+  "types": "index.ts",
+  "main": "index.ts",
+  "private": true,
+  "scripts": {
+    "generate": "openapi-typescript schema.yaml -o index.ts"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.6.1",
+    "typescript": "^5.7.3"
+  }
+}

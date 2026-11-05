@@ -1,0 +1,3 @@
+Aqui está o link para acompanhar o pedido {{ number }}:
+
+{{ tracking_url }}

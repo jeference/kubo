@@ -59,3 +59,9 @@ Os tamanhos e preços da tela de compra são valores de exemplo, em `frontend/sr
 cd prototipo/backend;  .venv/Scripts/python -m pytest; .venv/Scripts/ruff check .
 cd prototipo/frontend; npm run typecheck; npm run lint
 ```
+
+## Comparação de modelos (temporária)
+
+Página **só para testes locais**, fora do produto: http://localhost:3000/models-comparison. Sobe uma imagem e gera o modelo 3D em cada modelo selecionado (TRELLIS.2, Tripo, Meshy, Hunyuan e Rodin, com parâmetros baixos), mostrando o custo real de cada um. A rodada com os cinco custa cerca de US$ 2,00; ajuste modelos e parâmetros em `MODEL_COMPARISON`, em `backend/config/settings.py`.
+
+Para remover: apague `backend/comparison/`, `frontend/src/app/models-comparison/` e `frontend/src/features/model-comparison/`; e tire `MODEL_COMPARISON*` e `"comparison"` de `settings.py`, a rota de `config/urls.py`, `submit_comparison_model` dos adapters e do port, e `proxyTimeout` de `frontend/next.config.mjs`.

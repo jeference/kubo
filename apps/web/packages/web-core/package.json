@@ -1,0 +1,51 @@
+{
+  "name": "@kubo/web-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./session": "./src/session.ts",
+    "./api": "./src/api.ts",
+    "./env": "./src/env.ts",
+    "./forms": "./src/forms.ts",
+    "./auth-client": "./src/auth-client.ts",
+    "./providers": "./src/providers.tsx",
+    "./components/*": "./src/components/*.tsx",
+    "./server": "./src/server/index.ts",
+    "./auth-constants": "./src/server/constants.ts"
+  },
+  "files": ["src"],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@kubo/api-client": "workspace:*",
+    "@kubo/ui": "workspace:*",
+    "sonner": "^1.7.1",
+    "zustand": "^5.0.3"
+  },
+  "peerDependencies": {
+    "@tanstack/react-query": "^5.0.0",
+    "next": "^15.1.6",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-hook-form": "^7.54.2"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.2.0",
+    "@tanstack/react-query": "^5.64.1",
+    "@types/node": "^20.17.12",
+    "@types/react": "^19.0.7",
+    "@types/react-dom": "^19.0.3",
+    "eslint": "^9.18.0",
+    "eslint-config-next": "^15.1.6",
+    "next": "^15.1.6",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-hook-form": "^7.54.2",
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.8"
+  }
+}

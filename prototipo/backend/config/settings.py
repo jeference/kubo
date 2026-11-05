@@ -33,6 +33,7 @@ LOCAL_APPS = [
     "common",
     "integrations",
     "generation",
+    "comparison",  # TEMPORARY: local tests only, see comparison/__init__.py
 ]
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
@@ -129,6 +130,55 @@ if TRELLIS_PRESET not in TRELLIS_PRESETS:
     )
 TRELLIS_SETTINGS = TRELLIS_PRESETS[TRELLIS_PRESET]
 
+# TEMPORARY: models of the local /models-comparison page, see comparison/__init__.py.
+# Costs are per model, in USD, from the Runware docs (Trellis: measured). The docs don't
+# show low settings making Tripo or Meshy cheaper; Hunyuan's price follows the type (no
+# PBR is cheaper), not the face count. Rodin's docs also mention US$ 1.20.
+MODEL_COMPARISON = {
+    "trellis": {
+        "label": "TRELLIS.2",
+        "model": "microsoft:trellis-2@4b",
+        "image_as_list": False,
+        "estimated_cost": 0.04,
+        "settings": TRELLIS_PRESETS["low"],
+    },
+    "tripo": {
+        "label": "Tripo 3D v3.1",
+        "model": "tripo:v3.1@0",
+        "image_as_list": True,
+        "estimated_cost": 0.40,
+        "settings": {
+            "geometryQuality": "standard",
+            "textureQuality": "standard",
+            "pbr": False,
+            "faceLimit": 10000,
+        },
+    },
+    "meshy": {
+        "label": "Meshy-6",
+        "model": "meshy:meshy@6",
+        "image_as_list": True,
+        "estimated_cost": 0.80,
+        "settings": {"remesh": True, "polyCount": 30000, "pbr": False},
+    },
+    "hunyuan": {
+        "label": "Hunyuan 3D 3.1 Pro",
+        "model": "tencent:hunyuan-3d@3.1-pro",
+        "image_as_list": True,
+        "estimated_cost": 0.375,
+        "settings": {"generateType": "Normal", "pbr": False, "faceCount": 50000},
+    },
+    "rodin": {
+        "label": "Rodin Gen-2",
+        "model": "hyper3d:rodin@gen-2",
+        "image_as_list": True,
+        "estimated_cost": 0.40,
+        "settings": {"meshMode": "Raw", "quality": "low"},
+    },
+}
+# Rodin and Meshy can take 5-9 minutes.
+MODEL_COMPARISON_TIMEOUT_SECONDS = 20 * 60
+
 MAX_PRINT_COLORS = 4
 # Colors we have PLA filament for: name sent to the image model -> hex. Starting values
 # are the common PLA colors; replace them with the real stock.
@@ -145,6 +195,8 @@ FILAMENT_COLORS = {
     "pink": "#F5547C",
     "brown": "#9D432C",
     "beige": "#F7E6DE",
+    # Voolt3D PLA "Bege Caucasiano". The maker publishes no hex: sampled from its product photo.
+    "light skin": "#EBC8B0",
 }
 # Opens every prompt that produces a 2D image; at the end of the prompt, GPT Image 2 kept the
 # off-list colors of requests and references. Tested 2026-11-02, one image per case: off-list
@@ -175,6 +227,25 @@ _STANDARDIZE_RULES = (
     "isolated on a plain white background."
 )
 
+# Closes every prompt for a new image. _COLOR_RULE alone left most images over the limit,
+# because the model doesn't know which parts should share a color. Tested 2026-11-03 on 19 text
+# and photo cases, one image per case, counted by eye: images within the limit went from 7 to
+# 15 of 18 in Mini Pop and from 2 to 14 of 18 in Chibi. It still doesn't guarantee the limit,
+# and prints and some original colors are lost. A second pass repainting the image with 4 named
+# colors cut more colors but damaged faces and doubled the cost.
+_COLOR_PLAN = (
+    "\n\nColor plan, more important than color accuracy: the finished figure uses exactly "
+    f"{MAX_PRINT_COLORS} colors from the list, no more, and each part is one flat color with no "
+    "prints, patterns, stripes or logos. These rules change only the colors, never what the "
+    "subject is: every shape, object and feature above stays. Choose by subject. A person or "
+    "character: skin is light skin, or brown for dark skin; hair, beard, eyebrows, eyes and shoes "
+    "all share one dark color (black or brown); the top is one color; the trousers or skirt are "
+    "one color. An animal or toy: its main color, a second color for its next largest part, "
+    "black for eyes and nose, and one color for any accessory. An object, vehicle or building: "
+    "its 2 or 3 main colors, with every small detail repainted in one of them. Do not add any "
+    "person, animal or object that is not in the request or the reference."
+)
+
 # Pixar, Mini Pop and Chibi: tuned on GPT Image 2 against Jujubit's styles of the same name, on
 # 21 text and photo cases (2026-11-02, docs/concorrencia/jujubit/estilos/). Margin wording:
 # "filling the frame" made the figure touch the image border. "child" got a car refused by
@@ -185,6 +256,7 @@ _STYLE_FRAME = (
 )
 _STYLE_BACKDROP = (
     "isolated on a plain white background with a soft contact shadow and no base or pedestal."
+    + _COLOR_PLAN
 )
 _STYLE_IGNORE = "Ignore the background and whatever is underneath the subject."
 
@@ -212,9 +284,9 @@ _MINI_POP_OBJECT = (
 )
 
 _CHIBI_LOOK = (
-    "a large head about 45 percent of the total height, big glossy anime eyes with detailed "
-    "irises, a tiny nose and small mouth, a small rounded body with short limbs, hair sculpted "
-    "as big smooth locks, and detailed clothes with a polished PVC toy finish."
+    "a large head about 45 percent of the total height, big glossy anime eyes, a tiny nose and "
+    "small mouth, a small rounded body with short limbs, hair sculpted as big smooth locks, and "
+    "clothes with a polished PVC toy finish."
 )
 _CHIBI_HUMANOID = (
     "The figure is always a stylized humanoid anime character: an animal becomes a humanoid "
@@ -250,7 +322,7 @@ GENERATION = {
             "PROMPT_TEMPLATE": (
                 _COLOR_RULE
                 + "{prompt}, as a detailed 3D figurine, shown whole, centered and filling "
-                "the frame, isolated on a plain white background"
+                "the frame, isolated on a plain white background" + _COLOR_PLAN
             ),
             # Tuned for GPT Image 2 against Jujubit's Free Style on 16 photos (2026-11-01).
             # "Whatever is underneath" is what stops it copying pedestals and piers; a broader
@@ -260,12 +332,13 @@ GENERATION = {
                 + "Create a clean product photograph of a detailed 3D figurine of the main "
                 "subject of this reference image. Keep it recognizably the same: "
                 + _STANDARDIZE_RULES
+                + _COLOR_PLAN
             ),
             "STANDARDIZE_REQUEST_PROMPT_TEMPLATE": (
                 _COLOR_RULE
                 + "Create a clean product photograph of a detailed 3D figurine of the main "
                 "subject of this reference image, with this one change: {request}. Apart from "
-                "that change, keep it recognizably the same: " + _STANDARDIZE_RULES
+                "that change, keep it recognizably the same: " + _STANDARDIZE_RULES + _COLOR_PLAN
             ),
         },
         "pixar": {
@@ -280,7 +353,7 @@ GENERATION = {
             "STANDARDIZE_PROMPT_TEMPLATE": (
                 f"{_COLOR_RULE}Turn the main subject of this reference image into a 3D model "
                 f"from a modern animated family movie: {_PIXAR_LOOK} Keep it recognizably the "
-                "same: same features, hair, clothing, colors and distinctive details, and do "
+                "same: same features, hair, clothing and distinctive details, and do "
                 "not add anyone or anything that is not in the reference. If the subject is "
                 "one person, or two people side by side, give them a head only slightly larger "
                 "than realistic and large expressive eyes, and show them full body, standing "
@@ -292,7 +365,7 @@ GENERATION = {
                 f"{_COLOR_RULE}Turn the main subject of this reference image into a 3D model "
                 "from a modern animated family movie, with this one change: {request}. Style: "
                 f"{_PIXAR_LOOK} Apart from that change, keep it recognizably the same: same "
-                "features, hair, clothing, colors and distinctive details, and do not add "
+                "features, hair, clothing and distinctive details, and do not add "
                 "anyone or anything else. A person has a head only slightly larger than "
                 "realistic and large expressive eyes, and is shown full body, standing with "
                 f"the arms relaxed at the sides. {_PIXAR_ANIMAL} {_PIXAR_OBJECT} "
@@ -309,7 +382,7 @@ GENERATION = {
             "STANDARDIZE_PROMPT_TEMPLATE": (
                 f"{_COLOR_RULE}Turn the main subject of this reference image into a collectible "
                 f"vinyl bobble-head toy figure: {_MINI_POP_LOOK} Keep it recognizably the same: "
-                "same hair, facial hair, skin tone, clothing, colors and distinctive details. "
+                "same hair, facial hair, clothing and distinctive details. "
                 "A person is shown full body, even if the photo shows only part of them. Two "
                 "people stay two people, side by side. An animal keeps its animal body on four "
                 f"legs, with the same oversized head and bead eyes. {_MINI_POP_OBJECT} "
@@ -319,7 +392,7 @@ GENERATION = {
                 f"{_COLOR_RULE}Turn the main subject of this reference image into a collectible "
                 "vinyl bobble-head toy figure, with this one change: {request}. Style: "
                 f"{_MINI_POP_LOOK} Apart from that change, keep it recognizably the same: same "
-                "hair, skin tone, clothing, colors and distinctive details. An animal keeps "
+                "hair, clothing and distinctive details. An animal keeps "
                 f"its animal body, with the same oversized head and bead eyes. "
                 f"{_MINI_POP_OBJECT} {_STYLE_IGNORE} Front view, shown whole, {_STYLE_FRAME} "
                 f"{_STYLE_BACKDROP}"
@@ -338,7 +411,7 @@ GENERATION = {
             "STANDARDIZE_PROMPT_TEMPLATE": (
                 f"{_COLOR_RULE}Turn the main subject of this reference image into a Japanese "
                 f"chibi anime collectible figure: {_CHIBI_LOOK} Keep it recognizably the same: "
-                "same hair, skin tone, facial hair, clothing, colors and distinctive details. "
+                "same hair, facial hair, clothing and distinctive details. "
                 "A person is shown full body, even if the photo shows only part of them. Two "
                 "people stay two people, side by side. Requested words appear large on the "
                 f"outfit. {_CHIBI_HUMANOID} {_STYLE_IGNORE} Standing, shown whole, "
@@ -348,7 +421,7 @@ GENERATION = {
                 f"{_COLOR_RULE}Turn the main subject of this reference image into a Japanese "
                 "chibi anime collectible figure, with this one change: {request}. Style: "
                 f"{_CHIBI_LOOK} Apart from that change, keep it recognizably the same: same "
-                f"hair, skin tone, clothing, colors and distinctive details. {_CHIBI_HUMANOID} "
+                f"hair, clothing and distinctive details. {_CHIBI_HUMANOID} "
                 f"{_STYLE_IGNORE} Standing, shown whole, {_STYLE_FRAME} {_STYLE_BACKDROP}"
             ),
         },

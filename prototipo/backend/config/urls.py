@@ -6,6 +6,7 @@ from django.urls import include, path
 
 api_patterns = [
     path("", include("generation.urls")),
+    path("", include("comparison.urls")),  # TEMPORARY: local tests only
 ]
 
 urlpatterns = [

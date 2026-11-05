@@ -1,0 +1,10 @@
+**/node_modules
+**/.next
+**/.venv
+**/.env
+**/.env.local
+apps/backend/_media
+apps/backend/_pgdata
+prototipo
+docs
+.git

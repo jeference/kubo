@@ -1,0 +1,7 @@
+{% extends "emails/base.html" %}
+{% block content %}
+<p><strong>Recebemos seu pagamento!</strong></p>
+<p>Pedido <strong>{{ number }}</strong><br>Total: {{ total }}<br>Previsão de entrega: até {{ delivery_days }} dias úteis.</p>
+<p style="margin:24px 0"><a href="{{ tracking_url }}" style="background:#faff00;color:#7c3aed;border:1px solid #7c3aed;padding:12px 20px;border-radius:999px;text-decoration:none;font-weight:bold">Acompanhar pedido</a></p>
+<p style="color:#6b6b6b">Guarde este link: é ele que mostra o andamento do pedido sem precisar de conta.</p>
+{% endblock %}

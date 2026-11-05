@@ -1,0 +1,9 @@
+Recebemos seu pagamento!
+
+Pedido {{ number }}
+Total: {{ total }}
+Previsão de entrega: até {{ delivery_days }} dias úteis.
+
+Acompanhe seu pedido: {{ tracking_url }}
+
+Guarde este link: é ele que mostra o andamento do pedido sem precisar de conta.

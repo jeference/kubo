@@ -50,6 +50,12 @@ class GenerationPort(ABC):
         """Start an async image -> 3D (GLB) task. Returns the task id."""
 
     @abstractmethod
+    def submit_comparison_model(
+        self, *, image: bytes, model: str, image_as_list: bool, task_settings: dict
+    ) -> str:
+        """TEMPORARY, for /models-comparison: `submit_model` with any model and settings."""
+
+    @abstractmethod
     def get_model(self, *, task_id: str) -> ModelTask:
         """Current state of a 3D task started by `submit_model`."""
 

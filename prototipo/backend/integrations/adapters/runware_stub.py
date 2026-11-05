@@ -74,6 +74,11 @@ class StubGenerationAdapter(GenerationPort):
         self._tasks[task_id] = time.monotonic()
         return task_id
 
+    def submit_comparison_model(
+        self, *, image: bytes, model: str, image_as_list: bool, task_settings: dict
+    ) -> str:
+        return self.submit_model(image=image)
+
     def get_model(self, *, task_id: str) -> ModelTask:
         started = self._tasks.get(task_id)
         if started is None:

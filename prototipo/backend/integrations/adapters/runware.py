@@ -117,23 +117,37 @@ class RunwareGenerationAdapter(GenerationPort):
             raise UpstreamUnavailable("Runware não devolveu a imagem.")
         return GeneratedImage(data=_from_data_uri(item["imageDataURI"]), cost=item.get("cost"))
 
-    def submit_model(self, *, image: bytes) -> str:
+    def _submit_3d(self, *, model: str, inputs: dict, task_settings: dict) -> str:
         task_id = str(uuid.uuid4())
         self._run(
             {
                 "taskType": "3dInference",
                 "taskUUID": task_id,
-                "model": settings.RUNWARE_3D_MODEL,
+                "model": model,
                 "deliveryMethod": "async",
                 "outputType": "URL",
                 "outputFormat": "GLB",
                 "includeCost": True,
-                "inputs": {"image": _to_data_uri(image)},
-                "settings": settings.TRELLIS_SETTINGS,
+                "inputs": inputs,
+                "settings": task_settings,
             },
             "submit_model",
         )
         return task_id
+
+    def submit_model(self, *, image: bytes) -> str:
+        return self._submit_3d(
+            model=settings.RUNWARE_3D_MODEL,
+            inputs={"image": _to_data_uri(image)},
+            task_settings=settings.TRELLIS_SETTINGS,
+        )
+
+    def submit_comparison_model(
+        self, *, image: bytes, model: str, image_as_list: bool, task_settings: dict
+    ) -> str:
+        uri = _to_data_uri(image)
+        inputs = {"images": [uri]} if image_as_list else {"image": uri}
+        return self._submit_3d(model=model, inputs=inputs, task_settings=task_settings)
 
     def get_model(self, *, task_id: str) -> ModelTask:
         # getResponse format not yet confirmed against a real 3D task — parsed defensively.

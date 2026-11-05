@@ -6,7 +6,7 @@ Teste de 02 e 03/11/2026, só em 2D. As mesmas 21 entradas passaram pelos 3 esti
 
 | Caminho | Conteúdo |
 |---|---|
-| [comparativo-pixar.jpg](comparativo-pixar.jpg), [comparativo-mini-pop.jpg](comparativo-mini-pop.jpg), [comparativo-chibi.jpg](comparativo-chibi.jpg) | Entrada, Jujubit e Kubo lado a lado. `[V]` marca um caso de validação. |
+| [comparativo-pixar.jpg](comparativo-pixar.jpg), [comparativo-mini-pop.jpg](comparativo-mini-pop.jpg), [comparativo-chibi.jpg](comparativo-chibi.jpg) | Entrada, Jujubit e Kubo lado a lado. `[V]` marca um caso de validação. As imagens do Kubo são de antes do plano de cores, então têm mais cores e detalhes que as atuais. |
 | [prompts.json](prompts.json) | Versão ajustada dos prompts: `text`, `photo` e `photo_request`, um trio por estilo. O `_COLOR_RULE` entra antes de cada um. Em uso no backend, em `GENERATION["STYLES"]` de `settings.py`. |
 | [casos.json](casos.json) | As 21 entradas, com categoria, modo e grupo (ajuste ou validação). |
 | `jujubit/<estilo>/` | As 63 referências da Jujubit, em JPG. |
@@ -44,9 +44,27 @@ Das 21 imagens do Pixar, 9 não passam na verificação de fundo liso do backend
 
 - **Seguimos a Jujubit em:** proporções e rostos dos 3 estilos, Chibi humanizando tudo e Mini Pop transformando objetos em bonecos.
 - **Não copiamos as falhas do Pixar:** objetos e estruturas continuam sendo o que são, em formato estilizado e sem rosto.
-- **Mantivemos a regra de cores do Kubo:** por isso as cores saem mais primárias que as da Jujubit. Não medimos quantas imagens ficam em até 4 cores.
+- **Mantivemos a regra de cores do Kubo e acrescentamos um plano de cores:** por isso as cores saem mais primárias e as roupas mais lisas que na Jujubit. Veja a seção seguinte.
 - **Sem nomes de marca nos prompts:** eles descrevem o visual sem citar Pixar ou Funko. A interface usa o rótulo "Pixar".
 - **Sem base:** os estilos da Jujubit não trazem base, diferentemente do fluxo de foto atual do Kubo.
+
+## Limite de 4 cores
+
+Teste de 03/11/2026, com 19 entradas e uma imagem por caso, contando a olho. Os prompts agora terminam com um plano que diz quais partes dividem a mesma cor, em `_COLOR_PLAN` de `settings.py`, e não pedem mais para manter as cores e o tom de pele da foto.
+
+| Estilo | Imagens em até 4 cores, antes | Depois |
+|---|---|---|
+| Mini Pop | 7 de 18 | 15 de 18 |
+| Chibi | 2 de 18 | 14 de 18 |
+
+Pixar e Livre melhoraram na mesma direção, mas não foram contados. A foto de uma pessoa de camisa estampada saiu em preto, bege, azul e cinza nas 3 repetições, em Mini Pop e em Chibi.
+
+- **Sem garantia:** casais, hambúrguer e capivara de roupa ainda passam de 4 cores.
+- **Perda de fidelidade:** as estampas somem, e o modelo às vezes escolhe cores que não estavam na foto, como camisa rosa e calça roxa no casal, ou um gato alaranjado que saiu marrom.
+- **Robô instável:** em texto, "um robô amigável" já variava antes e virou caixa de correio, micro-ondas e menina-gato. Não sabemos se o plano piora isso.
+- **Segunda etapa descartada:** repintar a imagem com 4 cores nomeadas reduziu mais as cores, mas deixou olhos vazios no Chibi, um cachorro rosado e o cabelo errado, além de dobrar custo e tempo.
+- **Paleta:** esses números são de antes da cor de pele clara (`light skin`, `#EBC8B0`), o PLA "Bege Caucasiano" da Voolt3D. A fabricante não publica o código, então ele foi extraído da foto do produto e precisa ser conferido num carretel real. Em 12 imagens de teste, a pele continuou mais alaranjada que esse tom, e a pele escura continuou em marrom. Ainda não há caramelo, e pelos dourados variam entre branco, laranja e marrom.
+- **Contagem a olho:** as métricas automáticas que testamos falharam, confundindo sombra com cor ou juntando cores diferentes.
 
 ## Problemas conhecidos
 

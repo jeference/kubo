@@ -1,38 +1,32 @@
 "use client";
 
-import { ImageUp, Sparkles, X } from "lucide-react";
+import { ChevronDown, ImageUp, Sparkles, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useGenerateImages, useUploadImage } from "@/features/creator/hooks";
 import { useCreatorStore } from "@/features/creator/store";
 import type { Style } from "@/features/creator/types";
 import { cn } from "@/lib/utils";
 
-const EXAMPLES = [
-  "Um dragão bebê dormindo enrolado",
-  "Uma coruja de óculos lendo um livro",
-  "Um astronauta acenando",
-  "Um cacto sorridente num vasinho",
-];
-
 const STYLES: { id: Style; label: string; hint: string }[] = [
-  { id: "free", label: "Livre", hint: "Figura detalhada, fiel ao que você pedir." },
+  { id: "free", label: "Estilo Livre", hint: "Figura detalhada, fiel ao que você pedir." },
   {
     id: "pixar",
-    label: "Pixar",
+    label: "Estilo Pixar",
     hint: "Personagem de animação 3D, com olhos grandes e expressivos.",
   },
   {
     id: "mini-pop",
-    label: "Mini Pop",
+    label: "Estilo Mini Pop",
     hint: "Boneco de vinil de cabeça enorme. Objetos viram bonecos.",
   },
   {
     id: "chibi",
-    label: "Chibi",
+    label: "Estilo Chibi",
     hint: "Personagem de anime de cabeça grande. Animais e objetos viram personagens.",
   },
 ];
@@ -76,10 +70,6 @@ export function PromptStep() {
       <h1 className="text-center font-display text-4xl font-semibold tracking-tight">
         O que você quer criar?
       </h1>
-      <p className="mt-3 text-center text-muted">
-        Descreva o objeto, envie uma foto ou os dois. Antes do 3D, você confere a imagem e pode
-        editá-la.
-      </p>
 
       <Card
         className={cn(
@@ -107,6 +97,9 @@ export function PromptStep() {
             submit();
           }}
         >
+          <div className="px-2 pt-2">
+            <StyleSelect value={style} onChange={setStyle} />
+          </div>
           {photo && <AttachedPhoto file={photo} onRemove={() => setPhoto(null)} />}
           <textarea
             value={prompt}
@@ -124,44 +117,6 @@ export function PromptStep() {
             }
             className="w-full resize-none rounded-xl bg-transparent p-4 text-lg outline-none placeholder:text-muted/70"
           />
-          {!photo && (
-            <div className="flex flex-wrap gap-2 px-2">
-              {EXAMPLES.map((example) => (
-                <button
-                  key={example}
-                  type="button"
-                  onClick={() => setPrompt(example)}
-                  className="rounded-full border border-line px-3 py-1 text-[13px] text-muted transition-colors hover:border-ink/30 hover:text-ink"
-                >
-                  {example}
-                </button>
-              ))}
-            </div>
-          )}
-          <div className="mt-4 px-2">
-            <div role="radiogroup" aria-label="Estilo" className="flex flex-wrap gap-2">
-              {STYLES.map((option) => (
-                <button
-                  key={option.id}
-                  type="button"
-                  role="radio"
-                  aria-checked={style === option.id}
-                  onClick={() => setStyle(option.id)}
-                  className={cn(
-                    "rounded-full border px-3 py-1 text-sm font-medium transition-colors",
-                    style === option.id
-                      ? "border-accent bg-accent-soft text-ink"
-                      : "border-line text-muted hover:border-ink/30 hover:text-ink",
-                  )}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-            <p className="mt-2 text-[13px] text-muted">
-              {STYLES.find((option) => option.id === style)?.hint}
-            </p>
-          </div>
           <div className="mt-4 flex items-center justify-between gap-2 px-2 pb-2">
             <input
               ref={fileInputRef}
@@ -198,6 +153,61 @@ export function PromptStep() {
         )}
       </Card>
     </div>
+  );
+}
+
+function StyleSelect({ value, onChange }: { value: Style; onChange: (style: Style) => void }) {
+  const [open, setOpen] = useState(false);
+  const selected = STYLES.find((option) => option.id === value) ?? STYLES[0];
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger
+        aria-label={selected.label}
+        className="flex items-center gap-2 rounded-xl border border-line py-1.5 pl-1.5 pr-3 text-sm font-medium transition-colors hover:border-ink/30"
+      >
+        <StyleSample id={selected.id} className="size-7" />
+        {selected.label}
+        <ChevronDown className="size-4 text-muted" />
+      </PopoverTrigger>
+      <PopoverContent className="w-80 p-1.5">
+        <div role="listbox" aria-label="Estilo">
+          {STYLES.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              role="option"
+              aria-selected={option.id === value}
+              onClick={() => {
+                onChange(option.id);
+                setOpen(false);
+              }}
+              className={cn(
+                "flex w-full items-center gap-3 rounded-lg p-1.5 text-left transition-colors",
+                option.id === value ? "bg-accent-soft" : "hover:bg-ink/5",
+              )}
+            >
+              <StyleSample id={option.id} className="size-16" />
+              <span>
+                <span className="block text-sm font-medium">{option.label}</span>
+                <span className="block text-[13px] text-muted">{option.hint}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function StyleSample({ id, className }: { id: Style; className: string }) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element -- small static sample
+    <img
+      src={`/styles/${id}.webp`}
+      alt=""
+      className={cn("shrink-0 rounded-md border border-line object-cover", className)}
+    />
   );
 }
 

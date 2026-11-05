@@ -1,0 +1,6 @@
+{% extends "emails/base.html" %}
+{% block content %}
+<p>Seu código de verificação da Kubo é:</p>
+<p style="font-size:30px;font-weight:bold;letter-spacing:6px;margin:16px 0">{{ code }}</p>
+<p style="color:#6b6b6b">Ele vale por {{ ttl_minutes }} minutos. Se não foi você quem pediu, ignore este e-mail.</p>
+{% endblock %}

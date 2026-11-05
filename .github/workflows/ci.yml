@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: kubo
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: kubo
+        ports: ["5433:5432"]
+        options: >-
+          --health-cmd "pg_isready -U kubo"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    defaults:
+      run:
+        working-directory: apps/backend
+    env:
+      DJANGO_DEBUG: "True"
+      DATABASE_URL: postgres://kubo@127.0.0.1:5433/kubo
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[dev]"
+      - run: ruff check .
+      - run: ruff format --check .
+      - name: Nunca fields = "__all__"
+        run: "! grep -rn --include=serializers.py '__all__' ."
+      - run: python manage.py makemigrations --check --dry-run
+      - run: pytest
+      - name: Contrato OpenAPI atualizado
+        run: |
+          python manage.py spectacular --file /tmp/schema.yaml --validate --fail-on-warn
+          diff /tmp/schema.yaml ../../packages/api-types/schema.yaml
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - name: Tipos gerados atualizados
+        run: |
+          pnpm --filter @kubo/api-types generate
+          git diff --exit-code packages/api-types/index.ts
+      - run: pnpm -r lint
+      - run: pnpm -r typecheck
+      - run: pnpm -r test
+      - run: pnpm --filter @kubo/consumer build

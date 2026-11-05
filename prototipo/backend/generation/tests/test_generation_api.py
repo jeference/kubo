@@ -289,7 +289,7 @@ def test_build_image_prompt_wraps_description():
     prompt = services.build_image_prompt(prompt="  Uma coruja {de} óculos. ")
 
     assert "Uma coruja {de} óculos, as a detailed 3D figurine" in prompt
-    assert prompt.endswith("isolated on a plain white background")
+    assert "isolated on a plain white background\n\nColor plan" in prompt
 
 
 @pytest.mark.parametrize(
@@ -321,3 +321,7 @@ def test_every_style_builds_its_three_prompts(style):
     for prompt in prompts:
         assert f"at most {settings.MAX_PRINT_COLORS} of them" in prompt
         assert "plain white background" in prompt
+        assert f"exactly {settings.MAX_PRINT_COLORS} colors" in prompt
+        assert prompt.endswith("not in the request or the reference.")
+        assert "colors and distinctive" not in prompt
+        assert "skin tone" not in prompt

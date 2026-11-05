@@ -1,0 +1,2244 @@
+openapi: 3.0.3
+info:
+  title: Kubo API
+  version: 0.1.0
+paths:
+  /api/auth/login/:
+    post:
+      operationId: auth_login_create
+      description: |-
+        Takes a set of user credentials and returns an access and refresh JSON web
+        token pair to prove the authentication of those credentials.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPair'
+          description: ''
+  /api/auth/logout/:
+    post:
+      operationId: auth_logout_create
+      description: 'O refresh token é a própria credencial: funciona mesmo com o access
+        vencido.'
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequestRequest'
+        required: true
+      responses:
+        '205':
+          description: No response body
+  /api/auth/password/change/:
+    post:
+      operationId: auth_password_change_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordChangeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordChangeRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - visitorCookie: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailResponse'
+          description: ''
+  /api/auth/password/reset/:
+    post:
+      operationId: auth_password_reset_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailOnlyRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EmailOnlyRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailResponse'
+          description: ''
+  /api/auth/password/reset/confirm/:
+    post:
+      operationId: auth_password_reset_confirm_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirmRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirmRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailResponse'
+          description: ''
+  /api/auth/refresh/:
+    post:
+      operationId: auth_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequestRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessRefresh'
+          description: ''
+  /api/auth/register/:
+    post:
+      operationId: auth_register_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterResponse'
+          description: ''
+  /api/auth/verify-email/:
+    post:
+      operationId: auth_verify_email_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyEmailRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/VerifyEmailRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSessionResponse'
+          description: ''
+  /api/auth/verify-email/resend/:
+    post:
+      operationId: auth_verify_email_resend_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailOnlyRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EmailOnlyRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailResponse'
+          description: ''
+  /api/cart/:
+    get:
+      operationId: cart_retrieve
+      tags:
+      - cart
+      security:
+      - jwtAuth: []
+      - visitorCookie: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+          description: ''
+  /api/cart/items/:
+    post:
+      operationId: cart_items_create
+      tags:
+      - cart
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CartItemCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CartItemCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - visitorCookie: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartItem'
+          description: ''
+  /api/cart/items/{item_id}/:
+    patch:
+      operationId: cart_items_partial_update
+      parameters:
+      - in: path
+        name: item_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - cart
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCartItemUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCartItemUpdateRequest'
+      security:
+      - jwtAuth: []
+      - visitorCookie: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartItem'
+          description: ''
+    delete:
+      operationId: cart_items_destroy
+      parameters:
+      - in: path
+        name: item_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - cart
+      security:
+      - jwtAuth: []
+      - visitorCookie: []
+      responses:
+        '204':
+          description: No response body
+  /api/catalog/sizes/:
+    get:
+      operationId: catalog_sizes_list
+      tags:
+      - catalog
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProductSize'
+          description: ''
+  /api/catalog/styles/:
+    get:
+      operationId: catalog_styles_list
+      tags:
+      - catalog
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Style'
+          description: ''
+  /api/creations/:
+    get:
+      operationId: creations_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: Um número de página dentro do conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Número de resultados a serem retornados por página.
+        schema:
+          type: integer
+      tags:
+      - creations
+      security:
+      - jwtAuth: []
+      - visitorCookie: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCreationListList'
+          description: ''
+    post:
+      operationId: creations_create
+      tags:
+      - creations
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreationCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - visitorCookie: []
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreationDetail'
+          description: ''
+  /api/creations/{creation_id}/:
+    get:
+      operationId: creations_retrieve
+      parameters:
+      - in: path
+        name: creation_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - creations
+      security:
+      - jwtAuth: []
+      - visitorCookie: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreationDetail'
+          description: ''
+    delete:
+      operationId: creations_destroy
+      parameters:
+      - in: path
+        name: creation_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - creations
+      security:
+      - jwtAuth: []
+      - visitorCookie: []
+      responses:
+        '204':
+          description: No response body
+  /api/creations/{creation_id}/apply-version/:
+    post:
+      operationId: creations_apply_version_create
+      parameters:
+      - in: path
+        name: creation_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - creations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApplyVersionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ApplyVersionRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - visitorCookie: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreationDetail'
+          description: ''
+  /api/creations/{creation_id}/approve/:
+    post:
+      operationId: creations_approve_create
+      parameters:
+      - in: path
+        name: creation_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - creations
+      security:
+      - jwtAuth: []
+      - visitorCookie: []
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreationDetail'
+          description: ''
+  /api/creations/{creation_id}/back/:
+    post:
+      operationId: creations_back_create
+      parameters:
+      - in: path
+        name: creation_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - creations
+      security:
+      - jwtAuth: []
+      - visitorCookie: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreationDetail'
+          description: ''
+  /api/creations/{creation_id}/edits/:
+    post:
+      operationId: creations_edits_create
+      parameters:
+      - in: path
+        name: creation_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - creations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EditRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EditRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - visitorCookie: []
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreationDetail'
+          description: ''
+  /api/creations/{creation_id}/edits/{task_id}/cancel/:
+    post:
+      operationId: creations_edits_cancel_create
+      parameters:
+      - in: path
+        name: creation_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: task_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - creations
+      security:
+      - jwtAuth: []
+      - visitorCookie: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreationDetail'
+          description: ''
+  /api/creations/{creation_id}/retry/:
+    post:
+      operationId: creations_retry_create
+      parameters:
+      - in: path
+        name: creation_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - creations
+      security:
+      - jwtAuth: []
+      - visitorCookie: []
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreationDetail'
+          description: ''
+  /api/events/:
+    post:
+      operationId: events_create
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EventRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - visitorCookie: []
+      responses:
+        '204':
+          description: No response body
+  /api/me/:
+    get:
+      operationId: me_retrieve
+      tags:
+      - me
+      security:
+      - jwtAuth: []
+      - visitorCookie: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    patch:
+      operationId: me_partial_update
+      tags:
+      - me
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProfileUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedProfileUpdateRequest'
+      security:
+      - jwtAuth: []
+      - visitorCookie: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/me/addresses/:
+    get:
+      operationId: me_addresses_list
+      tags:
+      - me
+      security:
+      - jwtAuth: []
+      - visitorCookie: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Address'
+          description: ''
+  /api/me/claim/:
+    post:
+      operationId: me_claim_create
+      tags:
+      - me
+      security:
+      - jwtAuth: []
+      - visitorCookie: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimResponse'
+          description: ''
+  /api/me/delete/:
+    post:
+      operationId: me_delete_create
+      description: POST, porque precisa da senha no corpo.
+      tags:
+      - me
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountDeleteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AccountDeleteRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - visitorCookie: []
+      responses:
+        '204':
+          description: No response body
+  /api/media/{token}/:
+    get:
+      operationId: media_retrieve
+      parameters:
+      - in: path
+        name: token
+        schema:
+          type: string
+        required: true
+      tags:
+      - media
+      responses:
+        '200':
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+          description: ''
+  /api/orders/:
+    get:
+      operationId: orders_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: Um número de página dentro do conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Número de resultados a serem retornados por página.
+        schema:
+          type: integer
+      tags:
+      - orders
+      security:
+      - jwtAuth: []
+      - visitorCookie: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedOrderListList'
+          description: ''
+    post:
+      operationId: orders_create
+      parameters:
+      - in: header
+        name: Idempotency-Key
+        schema:
+          type: string
+        required: true
+      tags:
+      - orders
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/OrderCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - visitorCookie: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDetail'
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDetail'
+          description: ''
+  /api/orders/{order_id}/:
+    get:
+      operationId: orders_retrieve
+      parameters:
+      - in: path
+        name: order_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - orders
+      security:
+      - jwtAuth: []
+      - visitorCookie: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDetail'
+          description: ''
+  /api/orders/{order_id}/pay/:
+    post:
+      operationId: orders_pay_create
+      parameters:
+      - in: path
+        name: order_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - orders
+      security:
+      - jwtAuth: []
+      - visitorCookie: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDetail'
+          description: ''
+  /api/orders/track/{token}/:
+    get:
+      operationId: orders_track_retrieve
+      parameters:
+      - in: path
+        name: token
+        schema:
+          type: string
+        required: true
+      tags:
+      - orders
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderTracking'
+          description: ''
+  /api/orders/track/resend/:
+    post:
+      operationId: orders_track_resend_create
+      tags:
+      - orders
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResendTrackingRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ResendTrackingRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailResponse'
+          description: ''
+  /api/quota/:
+    get:
+      operationId: quota_retrieve
+      tags:
+      - quota
+      security:
+      - jwtAuth: []
+      - visitorCookie: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quota'
+          description: ''
+  /api/shipping/address/{postal_code}/:
+    get:
+      operationId: shipping_address_retrieve
+      parameters:
+      - in: path
+        name: postal_code
+        schema:
+          type: string
+        required: true
+      tags:
+      - shipping
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddressLookup'
+          description: ''
+  /api/shipping/quotes/:
+    post:
+      operationId: shipping_quotes_create
+      tags:
+      - shipping
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuoteRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/QuoteRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - visitorCookie: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ShippingQuote'
+          description: ''
+  /api/visitors/:
+    post:
+      operationId: visitors_create
+      description: Chamado pelo BFF, que grava o token em cookie httpOnly.
+      tags:
+      - visitors
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VisitorResponse'
+          description: ''
+  /api/webhooks/abacatepay/:
+    post:
+      operationId: webhooks_abacatepay_create
+      parameters:
+      - in: query
+        name: webhookSecret
+        schema:
+          type: string
+        required: true
+      tags:
+      - webhooks
+      responses:
+        '200':
+          description: No response body
+components:
+  schemas:
+    AccessRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+        refresh:
+          type: string
+      required:
+      - access
+    AccountDeleteRequest:
+      type: object
+      properties:
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - password
+    Address:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        postal_code:
+          type: string
+          readOnly: true
+        street:
+          type: string
+          readOnly: true
+        number:
+          type: string
+          readOnly: true
+        complement:
+          type: string
+          readOnly: true
+        neighborhood:
+          type: string
+          readOnly: true
+        city:
+          type: string
+          readOnly: true
+        state:
+          type: string
+          readOnly: true
+      required:
+      - city
+      - complement
+      - id
+      - neighborhood
+      - number
+      - postal_code
+      - state
+      - street
+    AddressLookup:
+      type: object
+      properties:
+        postal_code:
+          type: string
+        street:
+          type: string
+        neighborhood:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+      required:
+      - city
+      - neighborhood
+      - postal_code
+      - state
+      - street
+    ApplyVersionRequest:
+      type: object
+      properties:
+        version_id:
+          type: string
+          format: uuid
+      required:
+      - version_id
+    AuthSessionResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        tokens:
+          $ref: '#/components/schemas/TokenPair'
+      required:
+      - tokens
+      - user
+    Cart:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartItem'
+        subtotal_cents:
+          type: integer
+        item_count:
+          type: integer
+      required:
+      - item_count
+      - items
+      - subtotal_cents
+    CartItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        creation_id:
+          type: string
+          format: uuid
+          readOnly: true
+        size_id:
+          type: string
+          format: uuid
+          readOnly: true
+        size_label:
+          type: string
+          readOnly: true
+        quantity:
+          type: integer
+          readOnly: true
+        unit_price_cents:
+          type: integer
+          readOnly: true
+        line_total_cents:
+          type: integer
+          readOnly: true
+        image_url:
+          type: string
+          readOnly: true
+        unavailable_reason:
+          type: string
+          readOnly: true
+      required:
+      - creation_id
+      - id
+      - image_url
+      - line_total_cents
+      - quantity
+      - size_id
+      - size_label
+      - unavailable_reason
+      - unit_price_cents
+    CartItemCreateRequest:
+      type: object
+      properties:
+        creation_id:
+          type: string
+          format: uuid
+        size_id:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+          maximum: 10
+          minimum: 1
+      required:
+      - creation_id
+      - quantity
+      - size_id
+    Charge:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/ChargeStatusEnum'
+          readOnly: true
+        amount_cents:
+          type: integer
+          readOnly: true
+        pix_br_code:
+          type: string
+          readOnly: true
+        pix_qr_base64:
+          type: string
+          readOnly: true
+        expires_at:
+          type: string
+          format: date-time
+          readOnly: true
+        paid_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+      required:
+      - amount_cents
+      - expires_at
+      - id
+      - paid_at
+      - pix_br_code
+      - pix_qr_base64
+      - status
+    ChargeStatusEnum:
+      enum:
+      - pending
+      - paid
+      - expired
+      - failed
+      - refunded
+      type: string
+      description: |-
+        * `pending` - Pendente
+        * `paid` - Paga
+        * `expired` - Expirada
+        * `failed` - Falhou
+        * `refunded` - Reembolsada
+    ClaimResponse:
+      type: object
+      properties:
+        creations:
+          type: integer
+        orders:
+          type: integer
+      required:
+      - creations
+      - orders
+    CreationCreateRequest:
+      type: object
+      properties:
+        text:
+          type: string
+          maxLength: 1000
+        style:
+          type: string
+          minLength: 1
+          maxLength: 24
+        photo:
+          type: string
+          format: binary
+          nullable: true
+        rights_accepted:
+          type: boolean
+          default: false
+      required:
+      - style
+    CreationDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/CreationStatusEnum'
+          readOnly: true
+        style:
+          type: string
+          readOnly: true
+        text:
+          type: string
+          readOnly: true
+        has_photo:
+          type: boolean
+          readOnly: true
+        active_started_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: 'Início da etapa em andamento: o tempo na tela sobrevive a
+            recarregar a página.'
+          readOnly: true
+        current_version_id:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        versions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImageVersion'
+          readOnly: true
+        model:
+          allOf:
+          - $ref: '#/components/schemas/Model3D'
+          nullable: true
+          readOnly: true
+        edit_tasks:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProviderTask'
+          readOnly: true
+        error:
+          allOf:
+          - $ref: '#/components/schemas/CreationError'
+          nullable: true
+          readOnly: true
+        blocked_size_ids:
+          type: array
+          items:
+            type: string
+          readOnly: true
+        is_generating:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - active_started_at
+      - blocked_size_ids
+      - created_at
+      - current_version_id
+      - edit_tasks
+      - error
+      - has_photo
+      - id
+      - is_generating
+      - model
+      - status
+      - style
+      - text
+      - versions
+    CreationError:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+      required:
+      - code
+      - message
+    CreationList:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/CreationStatusEnum'
+          readOnly: true
+        style:
+          type: string
+          readOnly: true
+        text:
+          type: string
+          readOnly: true
+        thumbnail_url:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - status
+      - style
+      - text
+      - thumbnail_url
+    CreationStatusEnum:
+      enum:
+      - generating_image
+      - image_failed
+      - awaiting_approval
+      - generating_model
+      - model_failed
+      - ready
+      type: string
+      description: |-
+        * `generating_image` - Gerando imagem
+        * `image_failed` - Falha na imagem
+        * `awaiting_approval` - Aguardando aprovação
+        * `generating_model` - Gerando 3D
+        * `model_failed` - Falha no 3D
+        * `ready` - Pronta para comprar
+    DetailResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+      required:
+      - detail
+    EditRequestRequest:
+      type: object
+      properties:
+        version_id:
+          type: string
+          format: uuid
+        instruction:
+          type: string
+          minLength: 1
+          maxLength: 200
+      required:
+      - instruction
+      - version_id
+    EmailOnlyRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+      required:
+      - email
+    EventRequest:
+      type: object
+      properties:
+        name:
+          $ref: '#/components/schemas/NameEnum'
+        properties:
+          type: object
+          additionalProperties: {}
+      required:
+      - name
+    ImageVersion:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        number:
+          type: integer
+          readOnly: true
+        parent_id:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        origin:
+          allOf:
+          - $ref: '#/components/schemas/OriginEnum'
+          readOnly: true
+        instruction:
+          type: string
+          readOnly: true
+        image_url:
+          type: string
+          readOnly: true
+        has_plain_background:
+          type: boolean
+          readOnly: true
+        background_lost:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - background_lost
+      - created_at
+      - has_plain_background
+      - id
+      - image_url
+      - instruction
+      - number
+      - origin
+      - parent_id
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - email
+      - password
+    Model3D:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        source_version_id:
+          type: string
+          format: uuid
+          readOnly: true
+        glb_url:
+          type: string
+          readOnly: true
+        triangles:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - glb_url
+      - id
+      - source_version_id
+      - triangles
+    NameEnum:
+      enum:
+      - buy_now_clicked
+      - checkout_started
+      - edit_requested
+      - image_approved
+      - item_added_to_cart
+      - model_viewed
+      - page_viewed
+      - pix_copied
+      - pix_generated
+      - prompt_submitted
+      - shipping_quoted
+      - size_selected
+      type: string
+      description: |-
+        * `buy_now_clicked` - buy_now_clicked
+        * `checkout_started` - checkout_started
+        * `edit_requested` - edit_requested
+        * `image_approved` - image_approved
+        * `item_added_to_cart` - item_added_to_cart
+        * `model_viewed` - model_viewed
+        * `page_viewed` - page_viewed
+        * `pix_copied` - pix_copied
+        * `pix_generated` - pix_generated
+        * `prompt_submitted` - prompt_submitted
+        * `shipping_quoted` - shipping_quoted
+        * `size_selected` - size_selected
+    OrderCreateRequest:
+      type: object
+      properties:
+        item_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        shipping_quote_id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+          minLength: 1
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        cpf:
+          type: string
+          minLength: 1
+          maxLength: 14
+        phone:
+          type: string
+          minLength: 1
+          maxLength: 20
+        postal_code:
+          type: string
+          minLength: 1
+          maxLength: 9
+        street:
+          type: string
+          minLength: 1
+          maxLength: 160
+        number:
+          type: string
+          minLength: 1
+          maxLength: 20
+        complement:
+          type: string
+          maxLength: 80
+        neighborhood:
+          type: string
+          minLength: 1
+          maxLength: 80
+        city:
+          type: string
+          minLength: 1
+          maxLength: 80
+        state:
+          type: string
+          minLength: 1
+          maxLength: 2
+        accept_terms:
+          type: boolean
+      required:
+      - accept_terms
+      - city
+      - cpf
+      - email
+      - item_ids
+      - name
+      - neighborhood
+      - number
+      - phone
+      - postal_code
+      - shipping_quote_id
+      - state
+      - street
+    OrderDetail:
+      type: object
+      description: Só para o dono do pedido. CPF sempre mascarado.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        number:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/OrderStatusEnum'
+          readOnly: true
+        customer_email:
+          type: string
+          format: email
+          readOnly: true
+        customer_name:
+          type: string
+          readOnly: true
+        cpf_masked:
+          type: string
+          readOnly: true
+        phone:
+          type: string
+          readOnly: true
+        postal_code:
+          type: string
+          readOnly: true
+        street:
+          type: string
+          readOnly: true
+        address_number:
+          type: string
+          readOnly: true
+        complement:
+          type: string
+          readOnly: true
+        neighborhood:
+          type: string
+          readOnly: true
+        city:
+          type: string
+          readOnly: true
+        state:
+          type: string
+          readOnly: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+          readOnly: true
+        subtotal_cents:
+          type: integer
+          readOnly: true
+        shipping_cents:
+          type: integer
+          readOnly: true
+        total_cents:
+          type: integer
+          readOnly: true
+        shipping_service_name:
+          type: string
+          readOnly: true
+        shipping_company:
+          type: string
+          readOnly: true
+        delivery_days:
+          type: integer
+          readOnly: true
+        charge:
+          allOf:
+          - $ref: '#/components/schemas/Charge'
+          nullable: true
+          readOnly: true
+        shipment:
+          allOf:
+          - $ref: '#/components/schemas/ShipmentInfo'
+          nullable: true
+          readOnly: true
+        can_renew_payment:
+          type: boolean
+          readOnly: true
+        paid_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - address_number
+      - can_renew_payment
+      - charge
+      - city
+      - complement
+      - cpf_masked
+      - created_at
+      - customer_email
+      - customer_name
+      - delivery_days
+      - id
+      - items
+      - neighborhood
+      - number
+      - paid_at
+      - phone
+      - postal_code
+      - shipment
+      - shipping_cents
+      - shipping_company
+      - shipping_service_name
+      - state
+      - status
+      - street
+      - subtotal_cents
+      - total_cents
+    OrderItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        creation_id:
+          type: string
+          format: uuid
+          readOnly: true
+        size_label:
+          type: string
+          readOnly: true
+        quantity:
+          type: integer
+          readOnly: true
+        unit_price_cents:
+          type: integer
+          readOnly: true
+        line_total_cents:
+          type: integer
+          readOnly: true
+        image_url:
+          type: string
+          readOnly: true
+      required:
+      - creation_id
+      - id
+      - image_url
+      - line_total_cents
+      - quantity
+      - size_label
+      - unit_price_cents
+    OrderList:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        number:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/OrderStatusEnum'
+          readOnly: true
+        total_cents:
+          type: integer
+          readOnly: true
+        thumbnail_url:
+          type: string
+          readOnly: true
+        item_count:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - item_count
+      - number
+      - status
+      - thumbnail_url
+      - total_cents
+    OrderStatusEnum:
+      enum:
+      - pending_payment
+      - paid
+      - in_production
+      - shipped
+      - delivered
+      - expired
+      - refunded
+      type: string
+      description: |-
+        * `pending_payment` - Aguardando pagamento
+        * `paid` - Recebido
+        * `in_production` - Em produção
+        * `shipped` - Enviado
+        * `delivered` - Entregue
+        * `expired` - Expirado
+        * `refunded` - Reembolsado
+    OrderTracking:
+      type: object
+      description: 'Acompanhamento por link, sem login: sem e-mail, CPF, telefone
+        nem endereço completo.'
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        number:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/OrderStatusEnum'
+          readOnly: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+          readOnly: true
+        subtotal_cents:
+          type: integer
+          readOnly: true
+        shipping_cents:
+          type: integer
+          readOnly: true
+        total_cents:
+          type: integer
+          readOnly: true
+        shipping_service_name:
+          type: string
+          readOnly: true
+        delivery_days:
+          type: integer
+          readOnly: true
+        address_masked:
+          type: string
+          readOnly: true
+        shipment:
+          allOf:
+          - $ref: '#/components/schemas/ShipmentInfo'
+          nullable: true
+          readOnly: true
+        paid_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - address_masked
+      - created_at
+      - delivery_days
+      - id
+      - items
+      - number
+      - paid_at
+      - shipment
+      - shipping_cents
+      - shipping_service_name
+      - status
+      - subtotal_cents
+      - total_cents
+    OriginEnum:
+      enum:
+      - text
+      - photo
+      - edit
+      type: string
+      description: |-
+        * `text` - Texto
+        * `photo` - Foto
+        * `edit` - Edição
+    PaginatedCreationListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreationList'
+    PaginatedOrderListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderList'
+    PasswordChangeRequest:
+      type: object
+      properties:
+        old_password:
+          type: string
+          writeOnly: true
+          minLength: 1
+        new_password:
+          type: string
+          writeOnly: true
+          minLength: 8
+      required:
+      - new_password
+      - old_password
+    PasswordResetConfirmRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+        code:
+          type: string
+          minLength: 6
+          maxLength: 6
+        new_password:
+          type: string
+          writeOnly: true
+          minLength: 8
+      required:
+      - code
+      - email
+      - new_password
+    PatchedCartItemUpdateRequest:
+      type: object
+      properties:
+        quantity:
+          type: integer
+          maximum: 10
+          minimum: 1
+    PatchedProfileUpdateRequest:
+      type: object
+      properties:
+        first_name:
+          type: string
+          maxLength: 80
+        phone:
+          type: string
+          maxLength: 32
+    ProductSize:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        code:
+          type: string
+          readOnly: true
+        label:
+          type: string
+          readOnly: true
+        longest_side_mm:
+          type: integer
+          readOnly: true
+        price_cents:
+          type: integer
+          readOnly: true
+        is_default:
+          type: boolean
+          readOnly: true
+      required:
+      - code
+      - id
+      - is_default
+      - label
+      - longest_side_mm
+      - price_cents
+    ProviderTask:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/ProviderTaskKindEnum'
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/ProviderTaskStatusEnum'
+          readOnly: true
+        instruction:
+          type: string
+          readOnly: true
+        source_version_id:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        is_active:
+          type: boolean
+          readOnly: true
+        is_refused:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        finished_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+      required:
+      - created_at
+      - finished_at
+      - id
+      - instruction
+      - is_active
+      - is_refused
+      - kind
+      - source_version_id
+      - status
+    ProviderTaskKindEnum:
+      enum:
+      - text_to_image
+      - photo_to_image
+      - image_edit
+      - image_to_model
+      type: string
+      description: |-
+        * `text_to_image` - Texto para imagem
+        * `photo_to_image` - Foto para imagem
+        * `image_edit` - Edição de imagem
+        * `image_to_model` - Imagem para 3D
+    ProviderTaskStatusEnum:
+      enum:
+      - queued
+      - running
+      - waiting_provider
+      - succeeded
+      - failed
+      - cancelled
+      type: string
+      description: |-
+        * `queued` - Na fila
+        * `running` - Em execução
+        * `waiting_provider` - Aguardando o provedor
+        * `succeeded` - Concluída
+        * `failed` - Falhou
+        * `cancelled` - Cancelada
+    Quota:
+      type: object
+      properties:
+        image:
+          $ref: '#/components/schemas/QuotaKind'
+        edit:
+          $ref: '#/components/schemas/QuotaKind'
+        model:
+          $ref: '#/components/schemas/QuotaKind'
+      required:
+      - edit
+      - image
+      - model
+    QuotaKind:
+      type: object
+      properties:
+        limit:
+          type: integer
+        used:
+          type: integer
+        remaining:
+          type: integer
+      required:
+      - limit
+      - remaining
+      - used
+    QuoteRequestRequest:
+      type: object
+      properties:
+        postal_code:
+          type: string
+          minLength: 1
+          maxLength: 9
+        item_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+      required:
+      - item_ids
+      - postal_code
+    RefreshTokenRequestRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          minLength: 1
+      required:
+      - refresh
+    RegisterRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 8
+        first_name:
+          type: string
+          maxLength: 80
+        phone:
+          type: string
+          maxLength: 32
+      required:
+      - email
+      - password
+    RegisterResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        detail:
+          type: string
+      required:
+      - detail
+      - user
+    ResendTrackingRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+      required:
+      - email
+    ShipmentInfo:
+      type: object
+      properties:
+        carrier:
+          type: string
+        tracking_code:
+          type: string
+        shipped_at:
+          type: string
+          format: date-time
+          nullable: true
+        delivered_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - carrier
+      - delivered_at
+      - shipped_at
+      - tracking_code
+    ShippingQuote:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        service_name:
+          type: string
+          readOnly: true
+        company:
+          type: string
+          readOnly: true
+        price_cents:
+          type: integer
+          readOnly: true
+        shipping_days:
+          type: integer
+          readOnly: true
+        delivery_days:
+          type: integer
+          readOnly: true
+        expires_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - company
+      - delivery_days
+      - expires_at
+      - id
+      - price_cents
+      - service_name
+      - shipping_days
+    Style:
+      type: object
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        thumbnail:
+          type: string
+      required:
+      - id
+      - label
+      - thumbnail
+    TokenPair:
+      type: object
+      properties:
+        access:
+          type: string
+        refresh:
+          type: string
+      required:
+      - access
+      - refresh
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        email_verified:
+          type: boolean
+          readOnly: true
+        roles:
+          type: array
+          items:
+            type: string
+          readOnly: true
+        first_name:
+          type: string
+          readOnly: true
+        phone:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - email
+      - email_verified
+      - first_name
+      - id
+      - phone
+      - roles
+    VerifyEmailRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+        code:
+          type: string
+          minLength: 6
+          maxLength: 6
+      required:
+      - code
+      - email
+    VisitorResponse:
+      type: object
+      properties:
+        token:
+          type: string
+      required:
+      - token
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    visitorCookie:
+      type: apiKey
+      in: cookie
+      name: kubo_visitor
