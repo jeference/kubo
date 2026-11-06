@@ -35,25 +35,6 @@ export const IMAGE_PROGRESS: Progress = {
   secondsPerPhrase: 4,
 };
 
-export const MODEL_PROGRESS: Progress = {
-  title: "Criando seu modelo 3D",
-  subtitle: "Isso leva até 2 minutos. Pode sair desta página: sua criação continua aqui.",
-  steps: [
-    "Estudando cada detalhe",
-    "Aquecendo o bico da impressora",
-    "Empilhando camadas",
-    "Dando os últimos retoques",
-  ],
-  lastStepPhrases: [
-    "Dando os últimos retoques",
-    "Conferindo cada ângulo",
-    "Caprichando no acabamento",
-    "Quase lá, está ficando bom",
-  ],
-  secondsPerStep: 7,
-  secondsPerPhrase: 8,
-};
-
 /** Segundos desde o início da etapa, informado pelo servidor: sobrevive a recarregar a página. */
 export function useElapsedSince(startedAt: string | null | undefined): number {
   const [now, setNow] = useState(() => Date.now());

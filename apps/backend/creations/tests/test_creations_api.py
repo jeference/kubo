@@ -21,14 +21,15 @@ def _create(client, **fields):
     return client.post("/api/creations/", payload, format="multipart")
 
 
-def test_create_from_text_goes_to_approval(visitor_client):
+def test_create_from_text_is_ready_to_buy(visitor_client):
     response = _create(visitor_client)
     assert response.status_code == 202
     assert response.data["status"] == "generating_image"
     assert response.data["is_generating"] is True
     drain_worker()
     detail = visitor_client.get(f"/api/creations/{response.data['id']}/").data
-    assert detail["status"] == "awaiting_approval"
+    assert detail["status"] == "ready"
+    assert detail["is_generating"] is False
     assert len(detail["versions"]) == 1
     assert detail["versions"][0]["image_url"]
     assert detail["current_version_id"] == detail["versions"][0]["id"]
@@ -62,7 +63,7 @@ def test_photo_flow(visitor_client):
     assert response.data["has_photo"] is True
     drain_worker()
     detail = visitor_client.get(f"/api/creations/{response.data['id']}/").data
-    assert detail["status"] == "awaiting_approval"
+    assert detail["status"] == "ready"
     assert detail["versions"][0]["origin"] == "photo"
     creation = Creation.objects.get(globalid=response.data["id"])
     assert creation.input.rights_accepted_at is not None
@@ -72,7 +73,7 @@ def test_other_visitor_cannot_see_or_act(visitor_client, other_visitor_client, u
     creation_id = _create(visitor_client).data["id"]
     for client in (other_visitor_client, user_client):
         assert client.get(f"/api/creations/{creation_id}/").status_code == 404
-        assert client.post(f"/api/creations/{creation_id}/approve/").status_code == 404
+        assert client.post(f"/api/creations/{creation_id}/retry/").status_code == 404
         assert client.delete(f"/api/creations/{creation_id}/").status_code == 404
     assert other_visitor_client.get("/api/creations/").data["count"] == 0
 
@@ -82,22 +83,6 @@ def test_list_is_scoped_and_paginated(visitor_client):
     data = visitor_client.get("/api/creations/").data
     assert data["count"] == 1
     assert data["results"][0]["status"] == "generating_image"
-
-
-def test_full_flow_reaches_ready_with_model_and_estimates(visitor_client):
-    detail = make_ready_creation(visitor_client)
-    assert detail["model"]["glb_url"]
-    assert detail["model"]["triangles"] > 0
-    assert detail["blocked_size_ids"] == []
-    creation = Creation.objects.get(globalid=detail["id"])
-    assert creation.current_model.estimate_method == "voxel_flood"
-    assert creation.current_model.cost_estimates.count() == 5
-
-
-def test_approve_before_image_is_illegal(visitor_client):
-    creation_id = _create(visitor_client).data["id"]
-    response = visitor_client.post(f"/api/creations/{creation_id}/approve/")
-    assert response.status_code in (409, 422)
 
 
 def test_content_refusal_shows_message_and_releases_quota(visitor_client):
@@ -126,7 +111,7 @@ def test_provider_failure_retries_then_fails_and_user_can_retry(visitor_client):
     assert response.data["error"] is None
 
 
-def test_edit_creates_version_and_apply_discards_model(visitor_client):
+def test_edit_creates_version_and_apply_switches_image(visitor_client):
     detail = make_ready_creation(visitor_client)
     first_version = detail["versions"][0]["id"]
     response = visitor_client.post(
@@ -146,22 +131,17 @@ def test_edit_creates_version_and_apply_discards_model(visitor_client):
         f"/api/creations/{detail['id']}/apply-version/",
         {"version_id": edited["versions"][1]["id"]},
     ).data
-    assert applied["status"] == "awaiting_approval"
-    assert applied["model"] is None
+    assert applied["status"] == "ready"
     assert applied["current_version_id"] == edited["versions"][1]["id"]
-    creation = Creation.objects.get(globalid=detail["id"])
-    assert creation.models_3d.get().discarded_at is not None
 
 
-def test_back_and_reapprove_reuses_model_without_new_quota(visitor_client):
-    detail = make_ready_creation(visitor_client)
-    assert visitor_client.get("/api/quota/").data["model"]["used"] == 1
-    back = visitor_client.post(f"/api/creations/{detail['id']}/back/").data
-    assert back["status"] == "awaiting_approval"
-    assert back["model"] is not None
-    again = visitor_client.post(f"/api/creations/{detail['id']}/approve/").data
-    assert again["status"] == "ready"
-    assert visitor_client.get("/api/quota/").data["model"]["used"] == 1
+def test_edit_while_generating_is_refused(visitor_client):
+    creation = _create(visitor_client).data
+    response = visitor_client.post(
+        f"/api/creations/{creation['id']}/edits/",
+        {"version_id": creation["id"], "instruction": "azul"},
+    )
+    assert response.data["code"] == "not_editable"
 
 
 def test_edit_validations(visitor_client):

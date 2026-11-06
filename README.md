@@ -1,6 +1,6 @@
 # Kubo
 
-Plataforma que conecta quem quer comprar objetos impressos em 3D a parceiros que os imprimem. O cliente descreve o que quer ou envia uma foto, ajusta a imagem conversando com a IA, confere o modelo 3D e compra a peça.
+Plataforma que conecta quem quer comprar objetos impressos em 3D a parceiros que os imprimem. O cliente descreve o que quer ou envia uma foto, ajusta a imagem conversando com a IA e compra a peça direto da imagem.
 
 - **Produto:** [docs/PRD.md](docs/PRD.md)
 - **Arquitetura:** [docs/ARQUITETURA.md](docs/ARQUITETURA.md)
@@ -42,7 +42,7 @@ Reinicie `make backend` e `make worker` sempre que mudar o `.env`.
 
 | Capacidade | No `.env` local | Depende de |
 |---|---|---|
-| Imagem e 3D | Runware, real | `RUNWARE_API_KEY` |
+| Imagem | Runware, real | `RUNWARE_API_KEY` |
 | Endereço por CEP | ViaCEP, real | Nada |
 | Pagamento | **Simulado** | Chaves da AbacatePay |
 | Frete | **Simulado** | Credenciais do Melhor Envio |
@@ -58,8 +58,6 @@ cd apps/backend && .venv/Scripts/python manage.py simulate_pix_payment KB...
 ```
 
 Para receber webhooks da AbacatePay, registre `https://SEU-DOMINIO/api/webhooks/abacatepay/?webhookSecret=SEU_SEGREDO` no painel dela, com o mesmo segredo em `ABACATE_PAY_WEBHOOK_SECRET`.
-
-Com o storage S3, libere CORS de `GET` no bucket para a origem do app: o visualizador 3D baixa o GLB direto do bucket.
 
 ## Comandos
 

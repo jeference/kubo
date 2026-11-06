@@ -285,38 +285,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/creations/{creation_id}/approve/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["creations_approve_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/creations/{creation_id}/back/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["creations_back_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/creations/{creation_id}/edits/": {
         parameters: {
             query?: never;
@@ -734,10 +702,8 @@ export interface components {
             /** Format: uuid */
             readonly current_version_id: string | null;
             readonly versions: components["schemas"]["ImageVersion"][];
-            readonly model: components["schemas"]["Model3D"] | null;
             readonly edit_tasks: components["schemas"]["ProviderTask"][];
             readonly error: components["schemas"]["CreationError"] | null;
-            readonly blocked_size_ids: string[];
             readonly is_generating: boolean;
             /** Format: date-time */
             readonly created_at: string;
@@ -759,13 +725,10 @@ export interface components {
         /**
          * @description * `generating_image` - Gerando imagem
          *     * `image_failed` - Falha na imagem
-         *     * `awaiting_approval` - Aguardando aprovação
-         *     * `generating_model` - Gerando 3D
-         *     * `model_failed` - Falha no 3D
          *     * `ready` - Pronta para comprar
          * @enum {string}
          */
-        CreationStatusEnum: "generating_image" | "image_failed" | "awaiting_approval" | "generating_model" | "model_failed" | "ready";
+        CreationStatusEnum: "generating_image" | "image_failed" | "ready";
         DetailResponse: {
             detail: string;
         };
@@ -803,23 +766,11 @@ export interface components {
             email: string;
             password: string;
         };
-        Model3D: {
-            /** Format: uuid */
-            readonly id: string;
-            /** Format: uuid */
-            readonly source_version_id: string;
-            readonly glb_url: string;
-            readonly triangles: number;
-            /** Format: date-time */
-            readonly created_at: string;
-        };
         /**
          * @description * `buy_now_clicked` - buy_now_clicked
          *     * `checkout_started` - checkout_started
          *     * `edit_requested` - edit_requested
-         *     * `image_approved` - image_approved
          *     * `item_added_to_cart` - item_added_to_cart
-         *     * `model_viewed` - model_viewed
          *     * `page_viewed` - page_viewed
          *     * `pix_copied` - pix_copied
          *     * `pix_generated` - pix_generated
@@ -828,7 +779,7 @@ export interface components {
          *     * `size_selected` - size_selected
          * @enum {string}
          */
-        NameEnum: "buy_now_clicked" | "checkout_started" | "edit_requested" | "image_approved" | "item_added_to_cart" | "model_viewed" | "page_viewed" | "pix_copied" | "pix_generated" | "prompt_submitted" | "shipping_quoted" | "size_selected";
+        NameEnum: "buy_now_clicked" | "checkout_started" | "edit_requested" | "item_added_to_cart" | "page_viewed" | "pix_copied" | "pix_generated" | "prompt_submitted" | "shipping_quoted" | "size_selected";
         OrderCreateRequest: {
             item_ids: string[];
             /** Format: uuid */
@@ -1014,24 +965,21 @@ export interface components {
          * @description * `text_to_image` - Texto para imagem
          *     * `photo_to_image` - Foto para imagem
          *     * `image_edit` - Edição de imagem
-         *     * `image_to_model` - Imagem para 3D
          * @enum {string}
          */
-        ProviderTaskKindEnum: "text_to_image" | "photo_to_image" | "image_edit" | "image_to_model";
+        ProviderTaskKindEnum: "text_to_image" | "photo_to_image" | "image_edit";
         /**
          * @description * `queued` - Na fila
          *     * `running` - Em execução
-         *     * `waiting_provider` - Aguardando o provedor
          *     * `succeeded` - Concluída
          *     * `failed` - Falhou
          *     * `cancelled` - Cancelada
          * @enum {string}
          */
-        ProviderTaskStatusEnum: "queued" | "running" | "waiting_provider" | "succeeded" | "failed" | "cancelled";
+        ProviderTaskStatusEnum: "queued" | "running" | "succeeded" | "failed" | "cancelled";
         Quota: {
             image: components["schemas"]["QuotaKind"];
             edit: components["schemas"]["QuotaKind"];
-            model: components["schemas"]["QuotaKind"];
         };
         QuotaKind: {
             limit: number;
@@ -1562,48 +1510,6 @@ export interface operations {
                 "multipart/form-data": components["schemas"]["ApplyVersionRequest"];
             };
         };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreationDetail"];
-                };
-            };
-        };
-    };
-    creations_approve_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                creation_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            202: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreationDetail"];
-                };
-            };
-        };
-    };
-    creations_back_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                creation_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
         responses: {
             200: {
                 headers: {

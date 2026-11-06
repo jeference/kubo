@@ -1,6 +1,4 @@
-"""Dados iniciais. Parâmetros de custo são [Proposta], a calibrar com impressões reais."""
-
-from decimal import Decimal
+"""Dados iniciais: tamanhos e preços (RN-11) e filamentos."""
 
 from django.db import migrations
 
@@ -44,19 +42,6 @@ def seed(apps, schema_editor):
             is_default=default,
             sort_order=order,
         )
-    apps.get_model("catalog", "CostParameters").objects.create(
-        version=1,
-        density_g_cm3=Decimal("1.240"),
-        wall_mm=Decimal("1.20"),
-        infill_fraction=Decimal("0.150"),
-        cost_per_gram_cents=Decimal("15.00"),
-        cost_per_hour_cents=Decimal("500.00"),
-        grams_per_hour=Decimal("15.00"),
-        purge_grams=Decimal("30.00"),
-        packaging_cents=500,
-        gateway_fee_fraction=Decimal("0.0200"),
-        min_margin_fraction=Decimal("0.250"),
-    )
     filament_model = apps.get_model("catalog", "Filament")
     for name, hex_code in _FILAMENTS:
         filament_model.objects.create(name=name, hex_code=hex_code)

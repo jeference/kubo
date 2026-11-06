@@ -431,50 +431,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/CreationDetail'
           description: ''
-  /api/creations/{creation_id}/approve/:
-    post:
-      operationId: creations_approve_create
-      parameters:
-      - in: path
-        name: creation_id
-        schema:
-          type: string
-          format: uuid
-        required: true
-      tags:
-      - creations
-      security:
-      - jwtAuth: []
-      - visitorCookie: []
-      responses:
-        '202':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CreationDetail'
-          description: ''
-  /api/creations/{creation_id}/back/:
-    post:
-      operationId: creations_back_create
-      parameters:
-      - in: path
-        name: creation_id
-        schema:
-          type: string
-          format: uuid
-        required: true
-      tags:
-      - creations
-      security:
-      - jwtAuth: []
-      - visitorCookie: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CreationDetail'
-          description: ''
   /api/creations/{creation_id}/edits/:
     post:
       operationId: creations_edits_create
@@ -1203,11 +1159,6 @@ components:
           items:
             $ref: '#/components/schemas/ImageVersion'
           readOnly: true
-        model:
-          allOf:
-          - $ref: '#/components/schemas/Model3D'
-          nullable: true
-          readOnly: true
         edit_tasks:
           type: array
           items:
@@ -1218,11 +1169,6 @@ components:
           - $ref: '#/components/schemas/CreationError'
           nullable: true
           readOnly: true
-        blocked_size_ids:
-          type: array
-          items:
-            type: string
-          readOnly: true
         is_generating:
           type: boolean
           readOnly: true
@@ -1232,7 +1178,6 @@ components:
           readOnly: true
       required:
       - active_started_at
-      - blocked_size_ids
       - created_at
       - current_version_id
       - edit_tasks
@@ -1240,7 +1185,6 @@ components:
       - has_photo
       - id
       - is_generating
-      - model
       - status
       - style
       - text
@@ -1290,17 +1234,11 @@ components:
       enum:
       - generating_image
       - image_failed
-      - awaiting_approval
-      - generating_model
-      - model_failed
       - ready
       type: string
       description: |-
         * `generating_image` - Gerando imagem
         * `image_failed` - Falha na imagem
-        * `awaiting_approval` - Aguardando aprovação
-        * `generating_model` - Gerando 3D
-        * `model_failed` - Falha no 3D
         * `ready` - Pronta para comprar
     DetailResponse:
       type: object
@@ -1400,41 +1338,12 @@ components:
       required:
       - email
       - password
-    Model3D:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-          readOnly: true
-        source_version_id:
-          type: string
-          format: uuid
-          readOnly: true
-        glb_url:
-          type: string
-          readOnly: true
-        triangles:
-          type: integer
-          readOnly: true
-        created_at:
-          type: string
-          format: date-time
-          readOnly: true
-      required:
-      - created_at
-      - glb_url
-      - id
-      - source_version_id
-      - triangles
     NameEnum:
       enum:
       - buy_now_clicked
       - checkout_started
       - edit_requested
-      - image_approved
       - item_added_to_cart
-      - model_viewed
       - page_viewed
       - pix_copied
       - pix_generated
@@ -1446,9 +1355,7 @@ components:
         * `buy_now_clicked` - buy_now_clicked
         * `checkout_started` - checkout_started
         * `edit_requested` - edit_requested
-        * `image_approved` - image_approved
         * `item_added_to_cart` - item_added_to_cart
-        * `model_viewed` - model_viewed
         * `page_viewed` - page_viewed
         * `pix_copied` - pix_copied
         * `pix_generated` - pix_generated
@@ -1987,18 +1894,15 @@ components:
       - text_to_image
       - photo_to_image
       - image_edit
-      - image_to_model
       type: string
       description: |-
         * `text_to_image` - Texto para imagem
         * `photo_to_image` - Foto para imagem
         * `image_edit` - Edição de imagem
-        * `image_to_model` - Imagem para 3D
     ProviderTaskStatusEnum:
       enum:
       - queued
       - running
-      - waiting_provider
       - succeeded
       - failed
       - cancelled
@@ -2006,7 +1910,6 @@ components:
       description: |-
         * `queued` - Na fila
         * `running` - Em execução
-        * `waiting_provider` - Aguardando o provedor
         * `succeeded` - Concluída
         * `failed` - Falhou
         * `cancelled` - Cancelada
@@ -2017,12 +1920,9 @@ components:
           $ref: '#/components/schemas/QuotaKind'
         edit:
           $ref: '#/components/schemas/QuotaKind'
-        model:
-          $ref: '#/components/schemas/QuotaKind'
       required:
       - edit
       - image
-      - model
     QuotaKind:
       type: object
       properties:

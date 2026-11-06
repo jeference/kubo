@@ -15,7 +15,6 @@ STUBS = "integrations.adapters.stubs"
 @pytest.fixture(autouse=True)
 def _offline_settings(settings, tmp_path, db):
     settings.IMAGE_GENERATION_ADAPTER = f"{STUBS}.StubImageGenerationAdapter"
-    settings.MODEL_3D_ADAPTER = f"{STUBS}.StubModel3DAdapter"
     settings.PAYMENT_GATEWAY_ADAPTER = f"{STUBS}.StubPaymentGatewayAdapter"
     settings.SHIPPING_ADAPTER = f"{STUBS}.StubShippingAdapter"
     settings.ADDRESS_LOOKUP_ADAPTER = f"{STUBS}.StubAddressLookupAdapter"
@@ -23,7 +22,6 @@ def _offline_settings(settings, tmp_path, db):
     settings.EMAIL_ADAPTER = "integrations.adapters.email_console.ConsoleEmailAdapter"
     settings.MEDIA_ROOT = str(tmp_path / "media")
     settings.STUB_IMAGE_SECONDS = 0
-    settings.STUB_MODEL_SECONDS = 0
     settings.ABACATE_PAY_WEBHOOK_SECRET = "segredo-teste"
     settings.CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
     cache.clear()
@@ -97,9 +95,6 @@ def make_ready_creation(client, text="um dragão azul"):
     response = client.post("/api/creations/", {"text": text, "style": "free"}, format="multipart")
     assert response.status_code == 202, response.data
     creation_id = response.data["id"]
-    drain_worker()
-    response = client.post(f"/api/creations/{creation_id}/approve/")
-    assert response.status_code == 202, response.data
     drain_worker()
     detail = client.get(f"/api/creations/{creation_id}/")
     assert detail.data["status"] == "ready", detail.data

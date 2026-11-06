@@ -12,16 +12,6 @@ urlpatterns = [
         name="creation-retry",
     ),
     path(
-        "creations/<uuid:creation_id>/approve/",
-        views.CreationApproveView.as_view(),
-        name="creation-approve",
-    ),
-    path(
-        "creations/<uuid:creation_id>/back/",
-        views.CreationBackView.as_view(),
-        name="creation-back",
-    ),
-    path(
         "creations/<uuid:creation_id>/edits/",
         views.CreationEditView.as_view(),
         name="creation-edits",

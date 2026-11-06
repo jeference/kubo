@@ -43,7 +43,7 @@ class Migration(migrations.Migration):
                 ('quantity', models.PositiveSmallIntegerField(default=1)),
                 ('cart', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='items', to='orders.cart')),
                 ('creation', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='+', to='creations.creation')),
-                ('model', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='+', to='creations.model3d')),
+                ('version', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='+', to='creations.imageversion')),
                 ('size', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='+', to='catalog.productsize')),
             ],
             options={
@@ -110,7 +110,6 @@ class Migration(migrations.Migration):
                 ('style', models.CharField(max_length=24)),
                 ('prompt_text', models.TextField(blank=True)),
                 ('creation', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='+', to='creations.creation')),
-                ('model', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='+', to='creations.model3d')),
                 ('order', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='items', to='orders.order')),
                 ('size', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='+', to='catalog.productsize')),
                 ('version', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='+', to='creations.imageversion')),
@@ -152,7 +151,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddConstraint(
             model_name='cartitem',
-            constraint=models.UniqueConstraint(fields=('cart', 'model', 'size'), name='cart_item_uq'),
+            constraint=models.UniqueConstraint(fields=('cart', 'version', 'size'), name='cart_item_uq'),
         ),
         migrations.AddIndex(
             model_name='order',

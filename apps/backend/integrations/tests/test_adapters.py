@@ -12,7 +12,7 @@ import responses
 from common.exceptions import ServiceBusy, UpstreamUnavailable
 from integrations.adapters.abacatepay import AbacatePayAdapter
 from integrations.adapters.melhor_envio import MelhorEnvioAdapter
-from integrations.adapters.runware import RunwareImageGenerationAdapter, RunwareModel3DAdapter
+from integrations.adapters.runware import RunwareImageGenerationAdapter
 from integrations.adapters.viacep import ViaCepAdapter
 from integrations.models import IntegrationCredential
 from integrations.ports import (
@@ -96,51 +96,6 @@ def test_runware_missing_image_is_permanent(_keys):
     responses.post(RUNWARE, json={"data": [{}]})
     with pytest.raises(ProviderPermanentError):
         RunwareImageGenerationAdapter().generate(prompt="x", size=1024)
-
-
-@responses.activate
-def test_runware_3d_flow(_keys):
-    responses.post(RUNWARE, json={"data": []})
-    adapter = RunwareModel3DAdapter()
-    task_id = adapter.submit(image=b"png")
-    body = json.loads(responses.calls[0].request.body)[0]
-    assert body["taskType"] == "3dInference"
-    assert body["deliveryMethod"] == "async"
-    assert body["taskUUID"] == task_id
-
-    responses.replace(responses.POST, RUNWARE, json={"data": []})
-    assert adapter.get(external_id=task_id).status == "processing"
-
-    responses.replace(
-        responses.POST,
-        RUNWARE,
-        json={
-            "data": [
-                {
-                    "taskUUID": task_id,
-                    "cost": 0.03,
-                    "outputs": {"files": [{"url": "https://cdn/x.glb"}]},
-                }
-            ]
-        },
-    )
-    done = adapter.get(external_id=task_id)
-    assert done.status == "success"
-    assert done.file_url == "https://cdn/x.glb"
-    assert done.cost_usd == 0.03
-
-
-@responses.activate
-def test_runware_3d_error_states(_keys):
-    adapter = RunwareModel3DAdapter()
-    responses.post(RUNWARE, json={"data": [{"taskUUID": "t", "status": "error", "message": "ops"}]})
-    assert adapter.get(external_id="t").status == "failed"
-    responses.replace(
-        responses.POST,
-        RUNWARE,
-        json={"data": [], "errors": [{"code": "c", "message": "content policy"}]},
-    )
-    assert adapter.get(external_id="t").status == "refused"
 
 
 # --- AbacatePay ---

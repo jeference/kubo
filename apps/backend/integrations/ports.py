@@ -35,15 +35,6 @@ class GeneratedImage:
     cost_usd: float | None = None
 
 
-@dataclass(frozen=True)
-class Model3DStatus:
-    status: str  # processing | success | failed | refused
-    file_url: str = ""
-    file_bytes: bytes = b""
-    cost_usd: float | None = None
-    error: str = ""
-
-
 class ImageGenerationPort(ABC):
     provider = ""
     model_name = ""
@@ -54,18 +45,6 @@ class ImageGenerationPort(ABC):
     @abstractmethod
     def edit(self, *, image: bytes, prompt: str, size: int) -> GeneratedImage:
         """Imagem de referência + instrução. Também transforma a foto do cliente."""
-
-
-class Model3DPort(ABC):
-    provider = ""
-    model_name = ""
-
-    @abstractmethod
-    def submit(self, *, image: bytes) -> str:
-        """Inicia a tarefa assíncrona e devolve o id externo."""
-
-    @abstractmethod
-    def get(self, *, external_id: str) -> Model3DStatus: ...
 
 
 # --- Pagamento ---
@@ -184,10 +163,6 @@ def reset_ports() -> None:
 
 def get_image_generation_port() -> ImageGenerationPort:
     return _resolve("IMAGE_GENERATION_ADAPTER")
-
-
-def get_model_3d_port() -> Model3DPort:
-    return _resolve("MODEL_3D_ADAPTER")
 
 
 def get_payment_gateway_port() -> PaymentGatewayPort:

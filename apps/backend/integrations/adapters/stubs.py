@@ -25,8 +25,6 @@ from integrations.ports import (
     GatewayCharge,
     GeneratedImage,
     ImageGenerationPort,
-    Model3DPort,
-    Model3DStatus,
     PaymentGatewayPort,
     ProviderTemporaryError,
     ShippingOption,
@@ -77,30 +75,6 @@ def _check_triggers(prompt: str) -> None:
         raise ProviderTemporaryError("Falha simulada pelo stub.")
 
 
-def build_sample_glb(with_texture: bool = True) -> bytes:
-    """Boneco simples e fechado, com textura, gerado localmente."""
-    import numpy as np
-    import trimesh
-
-    body = trimesh.creation.icosphere(subdivisions=3, radius=0.5)
-    body.apply_scale([0.8, 1.0, 0.8])
-    head = trimesh.creation.icosphere(subdivisions=3, radius=0.4)
-    head.apply_translation([0, 0.75, 0])
-    mesh = trimesh.util.concatenate([body, head])
-    if with_texture:
-        vertices = mesh.vertices
-        uv = np.column_stack(
-            [
-                (np.arctan2(vertices[:, 2], vertices[:, 0]) + np.pi) / (2 * np.pi),
-                (vertices[:, 1] - vertices[:, 1].min()) / np.ptp(vertices[:, 1]),
-            ]
-        )
-        texture = Image.new("RGB", (64, 64), "#7C3AED")
-        ImageDraw.Draw(texture).rectangle((0, 32, 64, 64), fill="#FAFF00")
-        mesh.visual = trimesh.visual.TextureVisuals(uv=uv, image=texture)
-    return mesh.export(file_type="glb")
-
-
 class StubImageGenerationAdapter(ImageGenerationPort):
     provider = "stub"
     model_name = "stub-image"
@@ -114,20 +88,6 @@ class StubImageGenerationAdapter(ImageGenerationPort):
         _delay("STUB_IMAGE_SECONDS", 1)
         _check_triggers(prompt)
         return GeneratedImage(data=_figurine(size), cost_usd=0.0)
-
-
-class StubModel3DAdapter(Model3DPort):
-    provider = "stub"
-    model_name = "stub-3d"
-
-    def submit(self, *, image: bytes) -> str:
-        return f"stub-{time.time()}"
-
-    def get(self, *, external_id: str) -> Model3DStatus:
-        started = float(external_id.removeprefix("stub-"))
-        if time.time() - started < getattr(settings, "STUB_MODEL_SECONDS", 6):
-            return Model3DStatus(status="processing")
-        return Model3DStatus(status="success", file_bytes=build_sample_glb(), cost_usd=0.0)
 
 
 def _stub_key(external_id: str) -> str:

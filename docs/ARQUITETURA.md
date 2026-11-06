@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Status** | Rascunho para validação |
-| **Data** | 04/11/2026 |
+| **Data** | 04/11/2026, revisado em 05/11/2026 (compra direto do 2D, sem 3D) |
 | **Documento irmão** | [PRD do MVP](PRD.md) (o quê e por quê). Este documento trata do como |
 
 > **[Proposta]** marca uma escolha inicial que ainda precisa de validação. **[Verificar]** marca algo que a documentação do fornecedor não esclarece e precisa de teste ou contato.
@@ -12,7 +12,7 @@
 
 ## 1. Visão geral e princípios
 
-Um **monólito modular** em Django atende por API aos apps Next.js. O MVP tem um app, o do cliente, e o app de parceiros entra depois sobre o mesmo backend e os mesmos dados. Um worker separado executa as gerações de IA, que são lentas. **Funcionalidades de operação não existem neste app nem em painel à parte:** todas ficam no app de parceiros.
+Um **monólito modular** em Django atende por API aos apps Next.js. O MVP tem um app, o do cliente, e o app de parceiros entra depois sobre o mesmo backend e os mesmos dados. Um worker separado executa as gerações de IA, que são lentas. **O MVP só gera imagens:** o cliente compra a partir do 2D, e o modelo 3D fica para a preparação de impressão, depois do pagamento. **Funcionalidades de operação não existem neste app nem em painel à parte:** todas ficam no app de parceiros.
 
 ```mermaid
 flowchart LR
@@ -22,7 +22,7 @@ flowchart LR
     A --> DB[(PostgreSQL)]
     K[Worker de geração] --> DB
     S[Tarefas agendadas] --> DB
-    K --> R[Runware<br/>GPT Image 2 e Trellis 2]
+    K --> R[Runware<br/>GPT Image 2]
     K --> ST[(Storage S3)]
     A --> ST
     A --> P[Gateway PIX]
@@ -65,10 +65,9 @@ Cada app web tem domínio próprio, portanto cookies e sessões são independent
 
 | Camada | Escolha |
 |---|---|
-| **Backend** | Python 3.12, Django 5.2, Django REST Framework, SimpleJWT, drf-spectacular, django-filter, django-environ, structlog, requests, boto3, trimesh + NumPy (estimativa de volume) |
+| **Backend** | Python 3.12, Django 5.2, Django REST Framework, SimpleJWT, drf-spectacular, django-filter, django-environ, structlog, requests, boto3, Pillow |
 | **Banco** | PostgreSQL 16 |
 | **Frontend** | Next.js 15 (App Router), React 19, TypeScript estrito, Tailwind 3, componentes Radix no padrão shadcn, TanStack Query 5, Zustand 5, React Hook Form + Zod, sonner, lucide |
-| **3D** | three, `@react-three/fiber`, drei |
 | **Contrato** | drf-spectacular → openapi-typescript → openapi-fetch |
 | **Ferramentas** | pnpm (workspace, via `npx`), uv, Makefile, ruff, pytest + factory_boy + freezegun + responses, ESLint, Vitest + Testing Library, GitHub Actions |
 | **Serviços externos** | Runware (IA), AbacatePay (PIX), Melhor Envio (frete) [Proposta], storage compatível com S3, SMTP transacional |
@@ -113,8 +112,8 @@ Cada módulo segue o formato `models.py`, `services.py`, `serializers.py`, `view
 |---|---|
 | `common` | `BaseModel`, `AppendOnlyModel`, engine da máquina de estados, erros, permissões, identificação do ator, paginação, request id |
 | `accounts` | Usuário, papéis, autenticação, códigos por e-mail, visitante, transferência para conta, perfil, exclusão |
-| `catalog` | Tamanhos, preços, filamentos, parâmetros de custo, prompts e estilos versionados |
-| `creations` | Criações, versões, modelos 3D, tarefas de IA, cotas, teto de gasto, worker, estimativa de custo |
+| `catalog` | Tamanhos, preços, filamentos, prompts e estilos versionados |
+| `creations` | Criações, versões de imagem, tarefas de IA, cotas, teto de gasto, worker |
 | `media` | `Asset`, upload, URLs assinadas e retenção |
 | `orders` | Carrinho, pedido, itens, endereço, link de acompanhamento |
 | `payments` | Cobrança, webhook, lançamentos, reembolso. Único a escrever dinheiro |
@@ -210,12 +209,10 @@ Todo modelo herda `BaseModel` (`id` interno, `globalid` UUID, `created_at`, `upd
 
 | Entidade | Campos principais | Uso |
 |---|---|---|
-| `Creation` | user **ou** visitor, status, estilo, versão atual, modelo atual, excluída em | ● |
+| `Creation` | user **ou** visitor, status, estilo, versão atual, excluída em | ● |
 | `CreationInput` | creation, texto do cliente, foto (`Asset`), aceite dos direitos com data e IP | ● |
 | `ImageVersion` | creation, parent (árvore de versões), origem (`text`, `photo`, `edit`), instrução, asset, tarefa | ● |
-| `Model3D` | creation, versão de origem, asset do GLB, tarefa, triângulos, tem textura, volume, área, método da estimativa, descartado em | ● |
-| `CostEstimate` | model, tamanho, gramas, custo, margem, bloqueado, versão dos parâmetros | ● |
-| `ProviderTask` | creation, tipo, provedor, modelo, id externo, status, tentativas, próxima consulta, prompt renderizado, versão do prompt, parâmetros, custo em USD, início e fim, erro, trava (`locked_until`) | ● |
+| `ProviderTask` | creation, tipo, provedor, modelo, status, tentativas, próxima tentativa, prompt renderizado, versão do prompt, parâmetros, custo em USD, início e fim, erro, trava (`locked_until`) | ● |
 | `QuotaReservation` | ator, hash do IP, tipo, dia, estado (`reserved`, `consumed`, `released`), tarefa | ● |
 | `Asset` | bucket, chave, tipo, MIME, tamanho, sha256, visibilidade, classe de retenção, expurgado em | ● |
 
@@ -224,7 +221,6 @@ Todo modelo herda `BaseModel` (`id` interno, `globalid` UUID, `created_at`, `upd
 | Entidade | Campos principais | Uso |
 |---|---|---|
 | `ProductSize` | código, rótulo, maior dimensão em mm, preço em centavos, peso e dimensões da embalagem, ativo, ordem | ● |
-| `CostParameters` | versão, densidade, parede, preenchimento, custo por grama, custo por hora, gramas por hora, purga, embalagem, taxa do gateway, margem mínima | ● |
 | `Filament` | nome, hex, marca, ativo | ○ Hoje só orienta prompts |
 
 **Estilos e prompts ficam em código** (`catalog/prompts.py`), migrados dos ajustes já feitos no protótipo e com uma versão explícita. Mudar um prompt exige novo deploy e reteste contra as referências, e cada `ProviderTask` guarda o texto final enviado.
@@ -233,10 +229,10 @@ Todo modelo herda `BaseModel` (`id` interno, `globalid` UUID, `created_at`, `upd
 
 | Entidade | Campos principais | Uso |
 |---|---|---|
-| `Cart`, `CartItem` | ator; creation, modelo, tamanho, quantidade | ● |
+| `Cart`, `CartItem` | ator; creation, versão da imagem, tamanho, quantidade | ● |
 | `Address` | user, CEP, rua, número, complemento, bairro, cidade, UF | ● Só para contas |
 | `Order` | número, user (nulo), `customer_email`, nome, CPF criptografado, telefone, endereço congelado, status, subtotal, frete, total, serviço de frete, prazo prometido, aceite dos termos (versão e data), hash do token de acompanhamento, chave de idempotência | ● |
-| `OrderItem` | order, creation, versão aprovada, modelo, tamanho, quantidade, preço unitário, prompt e estilo congelados | ● |
+| `OrderItem` | order, creation, versão comprada, tamanho, quantidade, preço unitário, prompt e estilo congelados | ● |
 | `ShippingQuote` | ator, CEP de origem e destino, itens, serviço, preço, prazo, resposta bruta, válido até | ● |
 
 ### Dinheiro (`payments`)
@@ -280,18 +276,12 @@ O evento usa `aggregate_type` + `aggregate_id`, então qualquer modelo pode usar
 ```mermaid
 stateDiagram-v2
     [*] --> generating_image
-    generating_image --> awaiting_approval: imagem pronta
+    generating_image --> ready: imagem pronta
     generating_image --> image_failed: falha ou recusa
     image_failed --> generating_image: tentar de novo
-    awaiting_approval --> generating_model: aprovar
-    generating_model --> ready: modelo pronto
-    generating_model --> model_failed: falha
-    model_failed --> generating_model: tentar de novo
-    model_failed --> awaiting_approval: voltar
-    ready --> awaiting_approval: concluir edição ou voltar
 ```
 
-Editar não muda o status da criação: a tarefa de edição produz uma nova `ImageVersion`, e só **concluir** altera a versão atual. Se havia um modelo, ele recebe `descartado em` e continua no banco. A exclusão é um campo à parte, não um estado.
+Em `ready`, a compra já está aberta. Editar não muda o status da criação: a tarefa de edição produz uma nova `ImageVersion`, e só **concluir** altera a versão atual. Itens do carrinho guardam a própria versão, então uma edição posterior não os altera nem invalida. A exclusão é um campo à parte, não um estado.
 
 ### `ProviderTask`
 
@@ -299,15 +289,11 @@ Editar não muda o status da criação: a tarefa de edição produz uma nova `Im
 stateDiagram-v2
     [*] --> queued
     queued --> running: worker pegou
-    running --> waiting_provider: tarefa assíncrona enviada
     running --> succeeded
-    waiting_provider --> succeeded
     running --> failed
-    waiting_provider --> failed
     failed --> queued: nova tentativa
     queued --> cancelled
     running --> cancelled
-    waiting_provider --> cancelled
 ```
 
 ### `Order`
@@ -361,9 +347,9 @@ sequenceDiagram
     end
     W->>B: pega tarefa (SKIP LOCKED)
     W->>R: envia
-    R-->>W: URL do resultado
-    W->>S: baixa e grava
-    W->>B: cria versão ou modelo, debita cota, muda status
+    R-->>W: imagem
+    W->>S: grava
+    W->>B: cria versão, debita cota, muda status
 ```
 
 ### Worker
@@ -371,14 +357,12 @@ sequenceDiagram
 - Comando `python manage.py run_generation_worker`, em processo próprio, com várias threads [Proposta: 8].
 - Pega tarefas com `SELECT ... FOR UPDATE SKIP LOCKED` e grava `locked_until` como concessão de tempo. Se o processo morrer, a concessão vence e outro worker assume.
 - **2D e edição** são chamadas síncronas no provedor, com timeout de 90 s.
-- **3D** é assíncrono: envia, passa para `waiting_provider` e consulta a cada 2 s, liberando a thread entre as consultas.
 
 ### Fluxo de cada resultado
 
-1. Baixar o arquivo do provedor imediatamente e gravar no storage. A Runware não guarda resultados a longo prazo.
-2. Verificar o resultado. Na imagem, o fundo claro é checado para gerar um aviso, sem bloquear. No GLB, confere-se se **há textura**: sem textura, a tarefa é repetida uma vez.
-3. Em uma transação, gravar `ImageVersion` ou `Model3D`, o custo informado pelo provedor, debitar a cota e avançar a criação.
-4. No 3D, executar a estimativa de custo (seção 14) em seguida.
+1. Gravar a imagem no storage imediatamente. A Runware não guarda resultados a longo prazo.
+2. Checar o fundo claro, para gerar um aviso sem bloquear. O fundo claro facilita a geração do 3D na produção.
+3. Em uma transação, gravar a `ImageVersion`, o custo informado pelo provedor, debitar a cota e avançar a criação para `ready`.
 
 ### Falhas
 
@@ -386,7 +370,7 @@ sequenceDiagram
 |---|---|
 | Erro temporário (timeout, 5xx, 429) | Até 3 tentativas, com espera crescente |
 | Conteúdo recusado | Sem nova tentativa. Código próprio e mensagem amigável. Cota liberada |
-| Sem resposta dentro do limite (3D: 10 min [Proposta]) | Falha com código de timeout. Cota liberada |
+| Tarefa sem conclusão muito além do limite (2 × 5 min [Proposta]) | A varredura de tarefas presas encerra com código de timeout. Cota liberada |
 | Edição cancelada pelo cliente | Tarefa marcada `cancelled`, resultado ignorado. Se já enviada, o custo é registrado e a cota, consumida |
 
 ### Cota e teto de gasto
@@ -404,15 +388,14 @@ Os ports ficam em `integrations/ports/`, e cada adapter é escolhido por um cami
 | Port | Operações | Adapter do MVP | Stub |
 |---|---|---|---|
 | `ImageGenerationPort` | gerar de texto, gerar de foto, editar | Runware (`openai:gpt-image@2`) | Sim |
-| `Model3DPort` | enviar, consultar | Runware (`microsoft:trellis-2@4b`) | Sim |
 | `PaymentGatewayPort` | criar cobrança, consultar; reembolsar com o app de parceiros | AbacatePay | Sim |
 | `ShippingPort` | cotar | Melhor Envio | Sim |
 | `MediaStoragePort` | URL de upload, URL de download, gravar, apagar | S3 | Disco local |
 | `EmailPort` | enviar | SMTP | Console |
 | `AddressLookupPort` (P1) | buscar endereço por CEP | ViaCEP [Proposta] | Sim |
-| `PrintPreparationPort` | analisar, reparar, multicolor | **Futuro**, só descrito aqui | - |
+| `PrintPreparationPort` | gerar o 3D a partir da imagem do pedido, analisar, reparar, multicolor | **Futuro**, só descrito aqui | - |
 
-`GenerationPort` e o adapter da Runware do protótipo são o ponto de partida dos dois primeiros ports.
+`GenerationPort` e o adapter da Runware do protótipo são o ponto de partida do `ImageGenerationPort`.
 
 ---
 
@@ -420,7 +403,7 @@ Os ports ficam em `integrations/ports/`, e cada adapter é escolhido por um cami
 
 ### Fluxo do PIX
 
-1. `POST /api/orders/` com `Idempotency-Key` valida carrinho, tamanhos, trava de margem e frete. Cria o `Order` em `pending_payment` e os itens congelados. A mesma chave retorna o mesmo pedido.
+1. `POST /api/orders/` com `Idempotency-Key` valida carrinho, tamanhos ativos e frete. Cria o `Order` em `pending_payment` e os itens congelados. A mesma chave retorna o mesmo pedido.
 2. `POST /api/orders/{id}/pay/` cria a `Charge` via `POST /v2/transparents/create` (`method: "PIX"`, 30 min). Se já houver uma pendente, reaproveita.
 3. O frontend mostra QR Code e copia e cola, e consulta o pedido a cada 3 s.
 4. O webhook confirma, e o pedido vira `paid`.
@@ -482,36 +465,22 @@ Quando o app de parceiros existir, ele chamará `POST /v2/transparents/refund`, 
 
 ---
 
-## 14. Custo e trava de margem
+## 14. Preço sem medir a peça
 
-**Por que não usar `mesh.volume`:** quase todas as malhas geradas são abertas. Nos testes com o Trellis, o volume da própria malha ficou abaixo de 10% do volume fechado, e a área veio cerca do dobro. Um volume baixo significaria vender com prejuízo sem perceber. Preenchimento simples de voxels também falha, porque vaza por pequenos furos (-96% em uma esfera com furo de 4 mm).
+O cliente compra a partir da imagem, sem malha, então **não há estimativa de custo por peça antes da compra** e nenhum tamanho é bloqueado por criação. O preço depende só do tamanho (`ProductSize.price_cents`) e precisa cobrir as peças mais pesadas de cada tamanho.
 
-**Método, executado pelo worker depois do 3D:**
-
-1. Voxelizar em uma grade de 100 voxels no lado maior.
-2. **Volume:** flood-fill a partir do exterior com uma esfera de raio de 3 voxels. Tomar o maior valor em comparação com um teste nas seis direções dos eixos e subtrair metade dos voxels de superfície.
-3. **Área:** área dos voxels de borda dividida por 0,85.
-4. Guardar volume e área normalizados no `Model3D` e, para cada `ProductSize`, escalar pela maior dimensão (volume ao cubo, área ao quadrado).
-5. Calcular gramas, tempo e custo com os `CostParameters`, incluindo folga para purga de cor e embalagem.
-6. Gravar um `CostEstimate` por tamanho. **Bloquear** o tamanho se `(preço − custo − taxa) / preço` ficar abaixo da margem mínima.
-
-**Falha no cálculo:** usa-se o volume da caixa delimitadora como pior caso, e a origem fica registrada no modelo.
-
-**Validação no fechamento:** o bloqueio é conferido de novo ao criar o pedido, usando o `CostEstimate` gravado. A interface recebe a lista de tamanhos bloqueados com a criação.
-
-**Limitação conhecida:** o método foi testado nos modelos do protótipo, mas **não foi validado contra fatiador nem impressão real**, e os parâmetros iniciais são estimativas. A calibração é condição de lançamento no [PRD](PRD.md#condições-para-lançar), e `CostEstimate` guarda a versão dos parâmetros usada, para comparar com o custo real.
+A tabela é conferida com impressões reais antes do lançamento ([PRD](PRD.md#condições-para-lançar)). Uma medida de volume e custo volta a fazer sentido na preparação de impressão, depois do pagamento, quando a malha existir: ali ela pode alertar a operação sobre pedidos com margem baixa, sem mudar o que o cliente pagou.
 
 ---
 
 ## 15. Storage e acesso
 
-**Um bucket privado:** fotos, imagens, modelos e arquivos de produção, sempre por URL assinada. Miniaturas de estilo são arquivos estáticos do próprio app. Em desenvolvimento, o adapter local serve os arquivos por `/api/media/<token>/`, com token assinado.
+**Um bucket privado:** fotos, imagens e arquivos de produção, sempre por URL assinada. Miniaturas de estilo são arquivos estáticos do próprio app. Em desenvolvimento, o adapter local serve os arquivos por `/api/media/<token>/`, com token assinado.
 
-Com S3, o bucket precisa liberar CORS de `GET` para a origem do app, porque o visualizador baixa o GLB direto dele. Como as URLs assinadas mudam a cada resposta, o frontend reaproveita a URL de cada arquivo enquanto ela vale, para o polling não baixar tudo de novo.
+Como as URLs assinadas mudam a cada resposta, o frontend reaproveita a URL de cada imagem enquanto ela vale, para o polling não baixar tudo de novo.
 
 - **Upload de foto:** o frontend envia à API, que valida o tipo real, corrige a orientação, reduz a no máximo 1.024 px e grava. O caminho é mais simples que um upload pré-assinado e garante a validação no servidor. A limitação de 10 MB fica no servidor e no Next.
 - **Leitura:** a API verifica a posse e devolve URLs assinadas de curta duração (5 min [Proposta]) nos detalhes da criação.
-- **Prévia:** sem botão de download e com URL curta. Isso dificulta a cópia, mas não a impede, já que o visualizador precisa receber o GLB.
 - **Produção:** arquivos e downloads só pelo app de parceiros, com acesso registrado. Nenhum endpoint deste app os entrega.
 
 ### Retenção [Proposta, depende de validação jurídica]
@@ -519,14 +488,14 @@ Com S3, o bucket precisa liberar CORS de `GET` para a origem do app, porque o vi
 | Dado | Sem pedido | Com pedido |
 |---|---|---|
 | Foto enviada | 90 dias, ou até 30 dias após exclusão | Até o fim do prazo legal e de garantia |
-| Imagens geradas e GLB | Mantidos, ou até 30 dias após exclusão | Mantidos (RN-28) |
+| Imagens geradas | Mantidas, ou até 30 dias após exclusão | Mantidas (RN-28) |
 | Prompts, custos e metadados de tarefas | Mantidos. Texto e dados pessoais são removidos a pedido | Mantidos |
 | Dados do pedido | - | Conforme obrigações fiscais |
 | Visitante inativo | Removido após 12 meses | Relação do pedido preservada |
 
 A tarefa `purge_expired_assets` aplica essas regras e nunca apaga arquivos ligados a um `OrderItem`.
 
-**Volume esperado:** cerca de 7,5 MB por GLB, medido no protótipo, então o custo de storage não é preocupação inicial.
+**Volume esperado:** cerca de 1 a 2 MB por imagem PNG de 1.024 px, então o custo de storage não é preocupação inicial.
 
 ---
 
@@ -557,7 +526,7 @@ apps/web/consumer/src/
 |---|---|
 | `/` | Início, com a etapa de prompt do protótipo logo na primeira dobra |
 | `/criacoes` | Minhas criações |
-| `/criacoes/[id]` | **Hub:** mostra geração, validação do 2D, 3D ou compra conforme o status |
+| `/criacoes/[id]` | **Hub:** mostra a geração ou, com a imagem pronta, a compra ao lado dela |
 | `/carrinho`, `/checkout` | Carrinho e checkout. `?item=` limita o checkout a um item (Comprar agora) |
 | `/pedidos`, `/pedidos/[id]` | Pedidos da conta ou da sessão. O hub muda conforme o status, inclusive o pagamento PIX |
 | `/acompanhar/[token]` | Acompanhamento do convidado |
@@ -633,13 +602,11 @@ Valores vêm do protótipo: `accent #7C3AED`, `accent-soft #F0E9FF`, `highlight 
 | `GET /api/quota/` | Ator | Cota restante |
 | `GET /api/catalog/styles/`, `GET /api/catalog/sizes/` | Público | Estilos e tamanhos |
 | `GET, POST /api/creations/` | Ator | Listar e criar (texto, foto ou ambos) |
-| `GET, DELETE /api/creations/{id}/` | Dono | Detalhe (status, versões, modelo, tamanhos bloqueados) e exclusão |
+| `GET, DELETE /api/creations/{id}/` | Dono | Detalhe (status, versões, edições) e exclusão |
 | `POST /api/creations/{id}/retry/` | Dono | Tentar de novo |
-| `POST /api/creations/{id}/back/` | Dono | Voltar à validação do 2D, mantendo o modelo |
 | `POST /api/creations/{id}/edits/` | Dono | Pedir edição a partir de uma versão |
 | `POST /api/creations/{id}/edits/{task_id}/cancel/` | Dono | Cancelar edição |
 | `POST /api/creations/{id}/apply-version/` | Dono | Concluir com a versão escolhida |
-| `POST /api/creations/{id}/approve/` | Dono | Aprovar 2D e gerar 3D |
 | `GET /api/cart/` | Ator | Carrinho |
 | `POST /api/cart/items/`, `PATCH, DELETE /api/cart/items/{id}/` | Ator | Itens |
 | `POST /api/shipping/quotes/` | Ator | Cotar por CEP |
@@ -748,15 +715,13 @@ Envio síncrono, melhor esforço e fora da transação, com modelos Django e `Em
 
 | # | Questão | Situação |
 |---|---|---|
-| 1 | Como o modelo é transformado em peça, já que a preparação ficou fora do MVP | Depende do teste de impressão |
+| 1 | Como a imagem vira peça (provedor 3D, reparo, cores e fatiamento), já que a preparação ficou fora do MVP | Depende do teste de impressão |
 | 2 | Chave usada na assinatura do webhook; taxas, limites e prazo de reembolso do gateway. Hoje o webhook autentica só pelo segredo: a chave de assinatura documentada é pública e não prova nada além dele | Confirmar com a AbacatePay |
 | 3 | Dados de cliente exigidos pelo gateway e pela nota fiscal | Confirmar |
 | 4 | Conta no Melhor Envio e serviços oferecidos (PAC, SEDEX, transportadoras) | Definir e testar em sandbox |
-| 5 | Formato de `getResponse` da Runware em tarefa real de 3D | Testar |
-| 6 | Alcance do aviso de uso não comercial no site do Trellis 2, frente à licença MIT do repositório | Revisão jurídica |
-| 7 | Prazos de retenção e redação de termos | Revisão jurídica |
-| 8 | Hospedagem e domínios definitivos. Os arquivos Docker existem, mas não foram executados | Decidir e testar antes de homologação |
-| 9 | Limites de cota e teto de gasto | Ajustar com dados reais |
+| 5 | Prazos de retenção e redação de termos | Revisão jurídica |
+| 6 | Hospedagem e domínios definitivos. Os arquivos Docker existem, mas não foram executados | Decidir e testar antes de homologação |
+| 7 | Limites de cota e teto de gasto | Ajustar com dados reais |
 
 ---
 
@@ -766,12 +731,10 @@ Envio síncrono, melhor esforço e fora da transação, com modelos Django e `Em
 |---|---|
 | Criação | `Creation` |
 | Versão | `ImageVersion` |
-| Modelo 3D, prévia | `Model3D` |
 | Tarefa de IA | `ProviderTask` |
 | Visitante | `Visitor` |
 | Cota | `QuotaReservation` |
 | Tamanho | `ProductSize` |
-| Estimativa de custo | `CostEstimate` |
 | Pedido, item | `Order`, `OrderItem` |
 | Cobrança | `Charge` |
 | Lançamento | `LedgerEntry` |
@@ -785,4 +748,3 @@ Envio síncrono, melhor esforço e fora da transação, com modelos Django e `Em
 - [AbacatePay: webhooks](https://docs.abacatepay.com/pages/webhooks) e [reembolso de checkout transparente](https://docs.abacatepay.com/pages/transparents/refund)
 - [Melhor Envio: autenticação](https://docs.melhorenvio.com.br/docs/autenticacao) e [cálculo de frete](https://docs.melhorenvio.com.br/reference/calculo-de-fretes-por-produtos)
 - [Runware: termos](https://runware.ai/terms)
-- [Trellis 2: licença](https://github.com/microsoft/TRELLIS.2/blob/main/LICENSE)

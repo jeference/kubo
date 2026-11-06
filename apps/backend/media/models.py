@@ -9,7 +9,6 @@ class Asset(BaseModel):
     class Kind(models.TextChoices):
         PHOTO = "photo", "Foto do cliente"
         IMAGE = "image", "Imagem gerada"
-        MODEL = "model", "Modelo 3D"
         PRODUCTION = "production", "Arquivo de produção"
 
     key = models.CharField(max_length=255, unique=True)

@@ -1,8 +1,7 @@
 """Worker de geração: consome `ProviderTask` com `FOR UPDATE SKIP LOCKED`.
 
 Cada tarefa é pega com uma concessão de tempo (`locked_until`). Se o processo morrer, a
-concessão vence e outro worker assume. O 3D é assíncrono: envia, passa para `waiting_provider`
-e consulta de tempos em tempos, liberando a thread entre as consultas.
+concessão vence e outro worker assume.
 """
 
 from __future__ import annotations
@@ -19,39 +18,27 @@ from django.utils import timezone
 
 from common.alerts import alert
 from common.fsm import apply_transition
-from creations import costing, glb, quota
+from creations import quota
 from creations.fsm import CREATION_FSM
-from creations.models import Creation, ImageVersion, Model3D, ProviderTask
+from creations.models import Creation, ImageVersion, ProviderTask
 from creations.services import plain_background
 from integrations.ports import (
     ContentRefused,
     ProviderPermanentError,
     ProviderTemporaryError,
     get_image_generation_port,
-    get_model_3d_port,
 )
 from media import services as media
 from media.models import Asset
 
-_DOWNLOAD_TIMEOUT_SECONDS = 120
-_IMAGE_KINDS = (
-    ProviderTask.Kind.TEXT_TO_IMAGE,
-    ProviderTask.Kind.PHOTO_TO_IMAGE,
-    ProviderTask.Kind.IMAGE_EDIT,
-)
 _REFUSED_MESSAGE = (
     "Não conseguimos gerar essa imagem porque ela esbarrou nas regras de conteúdo. Personagens "
     "e marcas conhecidos, nudez e violência costumam ser recusados. Tente descrever de outro jeito."
 )
 _FAILED_MESSAGE = "Não conseguimos gerar agora. Tente de novo."
-_NO_TEXTURE_MESSAGE = "O modelo saiu sem cor. Tente gerar de novo."
 _TIMEOUT_MESSAGE = "A geração demorou demais. Tente de novo."
 
 log = structlog.get_logger(__name__)
-
-
-class _NoTexture(Exception):
-    pass
 
 
 def claim_task() -> ProviderTask | None:
@@ -62,15 +49,9 @@ def claim_task() -> ProviderTask | None:
         task = (
             ProviderTask.objects.select_for_update(skip_locked=True)
             .filter(
-                Q(status=ProviderTask.Status.QUEUED)
-                | Q(
-                    status__in=(
-                        ProviderTask.Status.RUNNING,
-                        ProviderTask.Status.WAITING_PROVIDER,
-                    )
-                ),
                 Q(next_attempt_at__isnull=True) | Q(next_attempt_at__lte=now),
                 Q(locked_until__isnull=True) | Q(locked_until__lte=now),
+                status__in=(ProviderTask.Status.QUEUED, ProviderTask.Status.RUNNING),
             )
             .order_by("next_attempt_at", "created_at")
             .first()
@@ -88,14 +69,9 @@ def claim_task() -> ProviderTask | None:
 def run_task(task: ProviderTask) -> None:
     structlog.contextvars.bind_contextvars(task_id=str(task.globalid), kind=task.kind)
     try:
-        if task.kind in _IMAGE_KINDS:
-            _run_image(task)
-        else:
-            _run_model(task)
+        _run_image(task)
     except ContentRefused as exc:
         _fail(task, code="content_refused", message=_REFUSED_MESSAGE, detail=str(exc))
-    except _NoTexture:
-        _retry_or_fail(task, code="model_without_texture", message=_NO_TEXTURE_MESSAGE)
     except (ProviderTemporaryError, requests.RequestException) as exc:
         _retry_or_fail(task, code="provider_unavailable", message=_FAILED_MESSAGE, detail=str(exc))
     except ProviderPermanentError as exc:
@@ -174,81 +150,6 @@ def _run_image(task: ProviderTask) -> None:
             apply_transition(instance=locked, fsm=CREATION_FSM, event="image_ready")
 
 
-def _run_model(task: ProviderTask) -> None:
-    port = get_model_3d_port()
-    if not task.external_id:
-        task.provider = port.provider
-        task.model_name = port.model_name
-        task.attempts += 1
-        task.external_id = port.submit(image=media.read(task.source_version.asset))
-        task.status = ProviderTask.Status.WAITING_PROVIDER
-        _schedule_poll(task)
-        return
-
-    limit = timedelta(seconds=settings.BUSINESS["MODEL_TIMEOUT_SECONDS"])
-    if timezone.now() - task.started_at > limit:
-        _fail(task, code="timeout", message=_TIMEOUT_MESSAGE)
-        return
-
-    status = port.get(external_id=task.external_id)
-    if status.status == "processing":
-        _schedule_poll(task)
-        return
-    if status.status == "refused":
-        raise ContentRefused(status.error)
-    if status.status != "success":
-        raise ProviderTemporaryError(status.error or "Falha no provedor.")
-
-    _record_cost(task, status.cost_usd)
-    data = status.file_bytes or _download(status.file_url)
-    if not glb.has_texture(data):
-        raise _NoTexture()
-    asset = media.store(data=data, kind=Asset.Kind.MODEL, mime="model/gltf-binary")
-    # Medir é pesado: fica fora da transação, para não segurar a linha da criação.
-    measure = costing.measure_mesh(data)
-
-    with transaction.atomic():
-        locked = Creation.objects.select_for_update().get(pk=task.creation_id)
-        model = Model3D.objects.create(
-            creation=locked,
-            source_version=task.source_version,
-            asset=asset,
-            task=task,
-            triangles=glb.triangle_count(data),
-            has_texture=True,
-        )
-        costing.apply_estimates(model=model, measure=measure)
-        _succeed(task)
-        locked.current_model = model
-        locked.save(update_fields=["current_model", "updated_at"])
-        apply_transition(instance=locked, fsm=CREATION_FSM, event="model_ready")
-
-
-def _download(url: str) -> bytes:
-    response = requests.get(url, timeout=_DOWNLOAD_TIMEOUT_SECONDS)
-    response.raise_for_status()
-    return response.content
-
-
-def _schedule_poll(task: ProviderTask) -> None:
-    task.next_attempt_at = timezone.now() + timedelta(
-        seconds=settings.BUSINESS["MODEL_POLL_SECONDS"]
-    )
-    task.locked_until = None
-    task.save(
-        update_fields=[
-            "provider",
-            "model_name",
-            "attempts",
-            "external_id",
-            "status",
-            "next_attempt_at",
-            "locked_until",
-            "updated_at",
-        ]
-    )
-
-
 def _succeed(task: ProviderTask) -> None:
     task.status = ProviderTask.Status.SUCCEEDED
     task.finished_at = timezone.now()
@@ -259,7 +160,6 @@ def _succeed(task: ProviderTask) -> None:
             "finished_at",
             "locked_until",
             "cost_usd",
-            "external_id",
             "provider",
             "model_name",
             "attempts",
@@ -277,7 +177,6 @@ def _retry_or_fail(task: ProviderTask, *, code: str, message: str, detail: str =
         return
     delay = 2**task.attempts
     task.status = ProviderTask.Status.QUEUED
-    task.external_id = ""
     task.next_attempt_at = timezone.now() + timedelta(seconds=delay)
     task.locked_until = None
     task.error_code = code
@@ -285,7 +184,6 @@ def _retry_or_fail(task: ProviderTask, *, code: str, message: str, detail: str =
     task.save(
         update_fields=[
             "status",
-            "external_id",
             "next_attempt_at",
             "locked_until",
             "error_code",
@@ -313,7 +211,6 @@ def _fail(task: ProviderTask, *, code: str, message: str, detail: str = "") -> N
                 "error_code",
                 "error_message",
                 "attempts",
-                "external_id",
                 "provider",
                 "model_name",
                 "updated_at",
@@ -323,11 +220,12 @@ def _fail(task: ProviderTask, *, code: str, message: str, detail: str = "") -> N
         if task.kind == ProviderTask.Kind.IMAGE_EDIT:
             return
         creation = Creation.objects.select_for_update().get(pk=task.creation_id)
-        event = "model_failed" if task.kind == ProviderTask.Kind.IMAGE_TO_MODEL else "image_failed"
         creation.last_error_code = code
         creation.last_error_message = message
         creation.save(update_fields=["last_error_code", "last_error_message", "updated_at"])
-        apply_transition(instance=creation, fsm=CREATION_FSM, event=event, payload={"code": code})
+        apply_transition(
+            instance=creation, fsm=CREATION_FSM, event="image_failed", payload={"code": code}
+        )
 
 
 def run_once() -> bool:
@@ -340,10 +238,10 @@ def run_once() -> bool:
 
 def reconcile_stuck_tasks() -> int:
     """Tarefas sem progresso muito além do limite: encerra e devolve a cota."""
-    limit = settings.BUSINESS["MODEL_TIMEOUT_SECONDS"] * 2
+    limit = settings.BUSINESS["TASK_TIMEOUT_SECONDS"] * 2
     cutoff = timezone.now() - timedelta(seconds=limit)
     stuck = ProviderTask.objects.filter(
-        status__in=(ProviderTask.Status.RUNNING, ProviderTask.Status.WAITING_PROVIDER),
+        status=ProviderTask.Status.RUNNING,
         started_at__lt=cutoff,
     ).filter(Q(locked_until__isnull=True) | Q(locked_until__lte=timezone.now()))
     count = 0

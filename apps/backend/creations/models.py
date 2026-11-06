@@ -1,4 +1,4 @@
-"""Uma criação: a entrada do cliente, as versões de imagem, os modelos 3D e cada tarefa de IA."""
+"""Uma criação: a entrada do cliente, as versões de imagem e cada tarefa de IA."""
 
 from django.conf import settings
 from django.db import models
@@ -10,9 +10,6 @@ class Creation(BaseModel):
     class Status(models.TextChoices):
         GENERATING_IMAGE = "generating_image", "Gerando imagem"
         IMAGE_FAILED = "image_failed", "Falha na imagem"
-        AWAITING_APPROVAL = "awaiting_approval", "Aguardando aprovação"
-        GENERATING_MODEL = "generating_model", "Gerando 3D"
-        MODEL_FAILED = "model_failed", "Falha no 3D"
         READY = "ready", "Pronta para comprar"
 
     user = models.ForeignKey(
@@ -35,9 +32,6 @@ class Creation(BaseModel):
     style = models.CharField(max_length=24)
     current_version = models.ForeignKey(
         "creations.ImageVersion", null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
-    )
-    current_model = models.ForeignKey(
-        "creations.Model3D", null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
     )
     last_error_code = models.CharField(max_length=32, blank=True)
     last_error_message = models.CharField(max_length=255, blank=True)
@@ -65,12 +59,10 @@ class ProviderTask(BaseModel):
         TEXT_TO_IMAGE = "text_to_image", "Texto para imagem"
         PHOTO_TO_IMAGE = "photo_to_image", "Foto para imagem"
         IMAGE_EDIT = "image_edit", "Edição de imagem"
-        IMAGE_TO_MODEL = "image_to_model", "Imagem para 3D"
 
     class Status(models.TextChoices):
         QUEUED = "queued", "Na fila"
         RUNNING = "running", "Em execução"
-        WAITING_PROVIDER = "waiting_provider", "Aguardando o provedor"
         SUCCEEDED = "succeeded", "Concluída"
         FAILED = "failed", "Falhou"
         CANCELLED = "cancelled", "Cancelada"
@@ -84,7 +76,6 @@ class ProviderTask(BaseModel):
     instruction = models.CharField(max_length=255, blank=True)
     provider = models.CharField(max_length=32, blank=True)
     model_name = models.CharField(max_length=64, blank=True)
-    external_id = models.CharField(max_length=128, blank=True)
     rendered_prompt = models.TextField(blank=True)
     prompt_version = models.CharField(max_length=16, blank=True)
     attempts = models.PositiveSmallIntegerField(default=0)
@@ -127,45 +118,12 @@ class ImageVersion(BaseModel):
         ]
 
 
-class Model3D(BaseModel):
-    creation = models.ForeignKey(Creation, on_delete=models.CASCADE, related_name="models_3d")
-    source_version = models.ForeignKey(ImageVersion, on_delete=models.PROTECT, related_name="+")
-    asset = models.ForeignKey("media.Asset", on_delete=models.PROTECT, related_name="+")
-    task = models.ForeignKey(
-        ProviderTask, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
-    )
-    triangles = models.PositiveIntegerField(default=0)
-    has_texture = models.BooleanField(default=False)
-    # Volume e área com a maior dimensão = 1. Escalam com o cubo e o quadrado do tamanho.
-    unit_volume = models.FloatField(null=True, blank=True)
-    unit_area = models.FloatField(null=True, blank=True)
-    estimate_method = models.CharField(max_length=24, blank=True)
-    discarded_at = models.DateTimeField(null=True, blank=True)
-
-
-class CostEstimate(BaseModel):
-    model = models.ForeignKey(Model3D, on_delete=models.CASCADE, related_name="cost_estimates")
-    size = models.ForeignKey("catalog.ProductSize", on_delete=models.PROTECT, related_name="+")
-    parameters = models.ForeignKey(
-        "catalog.CostParameters", on_delete=models.PROTECT, related_name="+"
-    )
-    grams = models.FloatField()
-    hours = models.FloatField()
-    cost_cents = models.PositiveIntegerField()
-    margin_fraction = models.FloatField()
-    is_blocked = models.BooleanField(default=False)
-
-    class Meta(BaseModel.Meta):
-        constraints = [models.UniqueConstraint(fields=["model", "size"], name="estimate_size_uq")]
-
-
 class QuotaReservation(BaseModel):
     """Cota reservada ao iniciar e consumida só no sucesso (RN-02)."""
 
     class Kind(models.TextChoices):
         IMAGE = "image", "Geração 2D"
         EDIT = "edit", "Edição"
-        MODEL = "model", "Modelo 3D"
 
     class State(models.TextChoices):
         RESERVED = "reserved", "Reservada"

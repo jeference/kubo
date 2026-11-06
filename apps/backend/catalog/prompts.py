@@ -128,7 +128,7 @@ GENERATION = {
     "IMAGES_PER_PROMPT": 1,
     "IMAGE_SIZE": 1024,
     # Sent with the current image as reference. Tested 2026-11-01: vague requests ("make it
-    # prettier") otherwise lose the white background, which the 3D step relies on.
+    # prettier") otherwise lose the white background, which print preparation relies on.
     # Placeholder: {instruction}.
     "EDIT_PROMPT_TEMPLATE": (
         _COLOR_RULE

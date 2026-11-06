@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from catalog import prompts
-from catalog.models import CostParameters, ProductSize
+from catalog.models import ProductSize
 
 
 def test_styles_are_public(anon):
@@ -27,10 +27,6 @@ def test_price_table(anon):
         ("12cm", 22990),
     ]
     assert [size["code"] for size in sizes if size["is_default"]] == ["6cm"]
-
-
-def test_seed_has_cost_parameters():
-    assert CostParameters.objects.filter(version=1).exists()
 
 
 def test_prompts_render_every_style():

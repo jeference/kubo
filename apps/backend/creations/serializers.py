@@ -6,9 +6,8 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from common.serializers import GlobalIdSerializer
-from creations import costing
 from creations.fsm import TASK_ACTIVE
-from creations.models import Creation, ImageVersion, Model3D, ProviderTask
+from creations.models import Creation, ImageVersion, ProviderTask
 from media import services as media
 
 
@@ -33,19 +32,6 @@ class ImageVersionSerializer(GlobalIdSerializer):
 
     def get_image_url(self, version) -> str:
         return media.signed_url(version.asset)
-
-
-class Model3DSerializer(GlobalIdSerializer):
-    glb_url = serializers.SerializerMethodField()
-    source_version_id = serializers.UUIDField(source="source_version.globalid", read_only=True)
-
-    class Meta:
-        model = Model3D
-        fields = ["id", "source_version_id", "glb_url", "triangles", "created_at"]
-        read_only_fields = fields
-
-    def get_glb_url(self, model) -> str:
-        return media.signed_url(model.asset)
 
 
 class ProviderTaskSerializer(GlobalIdSerializer):
@@ -103,10 +89,8 @@ class CreationDetailSerializer(GlobalIdSerializer):
         source="current_version.globalid", allow_null=True, read_only=True
     )
     versions = ImageVersionSerializer(many=True, read_only=True)
-    model = serializers.SerializerMethodField()
     edit_tasks = serializers.SerializerMethodField()
     error = serializers.SerializerMethodField()
-    blocked_size_ids = serializers.SerializerMethodField()
     is_generating = serializers.SerializerMethodField()
     active_started_at = serializers.SerializerMethodField()
 
@@ -121,10 +105,8 @@ class CreationDetailSerializer(GlobalIdSerializer):
             "active_started_at",
             "current_version_id",
             "versions",
-            "model",
             "edit_tasks",
             "error",
-            "blocked_size_ids",
             "is_generating",
             "created_at",
         ]
@@ -132,12 +114,6 @@ class CreationDetailSerializer(GlobalIdSerializer):
 
     def get_has_photo(self, creation) -> bool:
         return creation.input.photo_id is not None
-
-    @extend_schema_field(Model3DSerializer(allow_null=True))
-    def get_model(self, creation):
-        if creation.current_model_id is None:
-            return None
-        return Model3DSerializer(creation.current_model).data
 
     @extend_schema_field(ProviderTaskSerializer(many=True))
     def get_edit_tasks(self, creation):
@@ -153,17 +129,6 @@ class CreationDetailSerializer(GlobalIdSerializer):
         if not creation.last_error_code:
             return None
         return {"code": creation.last_error_code, "message": creation.last_error_message}
-
-    def get_blocked_size_ids(self, creation) -> list[str]:
-        from catalog.models import ProductSize
-
-        blocked = costing.blocked_size_ids(creation.current_model)
-        return [
-            str(value)
-            for value in ProductSize.objects.filter(pk__in=blocked).values_list(
-                "globalid", flat=True
-            )
-        ]
 
     def get_active_started_at(self, creation) -> datetime | None:
         """Início da etapa em andamento: o tempo na tela sobrevive a recarregar a página."""
@@ -204,4 +169,3 @@ class QuotaKindSerializer(serializers.Serializer):
 class QuotaSerializer(serializers.Serializer):
     image = QuotaKindSerializer()
     edit = QuotaKindSerializer()
-    model = QuotaKindSerializer()

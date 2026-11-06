@@ -24,24 +24,10 @@ export function PurchasePanel({ creation }: { creation: Creation }) {
   const [quantity, setQuantity] = useState(1);
   const [buying, setBuying] = useState(false);
 
-  const blocked = new Set(creation.blocked_size_ids);
-  const available = sizes.filter((size) => !blocked.has(size.id));
   const size =
-    available.find((option) => option.id === chosenId) ??
-    available.find((option) => option.is_default) ??
-    available[0];
-
-  if (sizes.length > 0 && available.length === 0) {
-    return (
-      <div className="space-y-2 rounded-xl border border-line p-4" role="alert">
-        <p className="font-medium">Este modelo não pode ser vendido</p>
-        <p className="text-sm text-muted">
-          A forma dele não permite uma impressão viável nos tamanhos disponíveis. Edite a imagem e
-          gere o 3D de novo.
-        </p>
-      </div>
-    );
-  }
+    sizes.find((option) => option.id === chosenId) ??
+    sizes.find((option) => option.is_default) ??
+    sizes[0];
 
   function addToCart(buyNow: boolean) {
     if (!size) return;
@@ -79,31 +65,25 @@ export function PurchasePanel({ creation }: { creation: Creation }) {
       <fieldset>
         <legend className="text-xs font-semibold uppercase tracking-widest">Tamanho</legend>
         <div className="mt-3 flex flex-wrap gap-2 lg:gap-3">
-          {sizes.map((option) => {
-            const isBlocked = blocked.has(option.id);
-            return (
-              <button
-                key={option.id}
-                type="button"
-                aria-pressed={option.id === size?.id}
-                disabled={isBlocked}
-                title={isBlocked ? "Indisponível para este modelo" : undefined}
-                onClick={() => {
-                  setChosenId(option.id);
-                  track("size_selected", { size: option.code });
-                }}
-                className={cn(
-                  "border px-4 py-2.5 text-sm transition-colors lg:py-2 lg:text-[13.5px]",
-                  option.id === size?.id
-                    ? "border-ink font-medium text-ink"
-                    : "border-line text-ink hover:border-ink/40",
-                  isBlocked && "cursor-not-allowed text-muted line-through hover:border-line",
-                )}
-              >
-                {option.label}
-              </button>
-            );
-          })}
+          {sizes.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              aria-pressed={option.id === size?.id}
+              onClick={() => {
+                setChosenId(option.id);
+                track("size_selected", { size: option.code });
+              }}
+              className={cn(
+                "border px-4 py-2.5 text-sm transition-colors lg:py-2 lg:text-[13.5px]",
+                option.id === size?.id
+                  ? "border-ink font-medium text-ink"
+                  : "border-line text-ink hover:border-ink/40",
+              )}
+            >
+              {option.label}
+            </button>
+          ))}
         </div>
       </fieldset>
 
@@ -135,8 +115,8 @@ export function PurchasePanel({ creation }: { creation: Creation }) {
       </div>
 
       <p className="rounded-xl bg-sunken p-3 text-[13px] leading-snug text-muted">
-        A prévia é uma aproximação. A peça é impressa em filamento com até 4 cores, então cores e
-        detalhes podem ser diferentes da imagem.
+        A imagem é uma prévia. A peça é impressa em filamento com até 4 cores, então forma, cores e
+        detalhes podem ser diferentes.
       </p>
 
       {/* Fixos no rodapé do celular. */}

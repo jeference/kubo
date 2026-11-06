@@ -31,7 +31,7 @@ def creations_for(actor):
 def get_creation(actor, creation_id) -> Creation:
     creation = (
         creations_for(actor)
-        .select_related("input", "input__photo", "current_version", "current_model")
+        .select_related("input", "input__photo", "current_version")
         .filter(globalid=creation_id)
         .first()
     )
@@ -43,14 +43,7 @@ def get_creation(actor, creation_id) -> Creation:
 def get_creation_for_response(creation: Creation) -> Creation:
     """Recarrega com o que o serializer usa, depois de uma ação."""
     return (
-        Creation.objects.select_related(
-            "input",
-            "input__photo",
-            "current_version",
-            "current_model",
-            "current_model__asset",
-            "current_model__source_version",
-        )
+        Creation.objects.select_related("input", "input__photo", "current_version")
         .prefetch_related("versions__asset", "versions__parent")
         .get(pk=creation.pk)
     )
@@ -141,16 +134,13 @@ def _enqueue_image(*, actor, ip_hash: str, creation: Creation) -> ProviderTask:
 
 
 def retry(*, actor, ip_hash: str, creation: Creation, request_id: str = "") -> Creation:
-    """Tenta de novo a etapa que falhou. Uma nova reserva de cota: a anterior foi devolvida."""
+    """Tenta a imagem de novo. Uma nova reserva de cota: a anterior foi devolvida."""
 
     def effects():
         creation.last_error_code = ""
         creation.last_error_message = ""
         creation.save(update_fields=["last_error_code", "last_error_message", "updated_at"])
-        if creation.status == Creation.Status.IMAGE_FAILED:
-            _enqueue_image(actor=actor, ip_hash=ip_hash, creation=creation)
-        else:
-            _enqueue_model(actor=actor, ip_hash=ip_hash, creation=creation)
+        _enqueue_image(actor=actor, ip_hash=ip_hash, creation=creation)
 
     apply_transition(
         instance=creation,
@@ -172,7 +162,7 @@ def request_edit(
         raise GuardFailed("Descreva o ajuste.", code="empty_instruction")
     if len(instruction) > settings.BUSINESS["EDIT_MAX_CHARS"]:
         raise GuardFailed("Instrução longa demais.", code="instruction_too_long")
-    if creation.status not in (Creation.Status.AWAITING_APPROVAL, Creation.Status.READY):
+    if creation.status != Creation.Status.READY:
         raise GuardFailed("Esta criação não pode ser editada agora.", code="not_editable")
     version = creation.versions.filter(globalid=version_id).first()
     if version is None:
@@ -213,83 +203,27 @@ def cancel_edit(*, creation: Creation, task_id) -> ProviderTask:
 
 
 def apply_version(*, actor, creation: Creation, version_id, request_id: str = "") -> Creation:
-    """Concluir a edição: a versão vira a atual, e um 3D existente é descartado (RN-09)."""
+    """Concluir a edição: a versão escolhida vira a atual. Itens no carrinho mantêm a sua."""
+    from audit.services import record_event
+
     version = creation.versions.filter(globalid=version_id).first()
     if version is None:
         raise ResourceNotFound("Versão não encontrada.")
-    if creation.status not in (Creation.Status.AWAITING_APPROVAL, Creation.Status.READY):
+    if creation.status != Creation.Status.READY:
         raise GuardFailed("Esta criação não pode ser alterada agora.", code="not_editable")
     if creation.current_version_id == version.pk:
         return creation
 
     with transaction.atomic():
-        if creation.status == Creation.Status.READY:
-            apply_transition(
-                instance=creation,
-                fsm=CREATION_FSM,
-                event="back",
-                actor=actor,
-                request_id=request_id,
-                payload={"reason": "version_applied"},
-            )
-        _discard_current_model(creation)
         creation.current_version = version
-        creation.current_model = None
-        creation.save(update_fields=["current_version", "current_model", "updated_at"])
-    creation.refresh_from_db()
-    return creation
-
-
-def _discard_current_model(creation: Creation) -> None:
-    if creation.current_model_id:
-        model = creation.current_model
-        model.discarded_at = timezone.now()
-        model.save(update_fields=["discarded_at", "updated_at"])
-
-
-def _enqueue_model(*, actor, ip_hash: str, creation: Creation) -> ProviderTask:
-    return _new_task(
-        actor=actor,
-        ip_hash=ip_hash,
-        creation=creation,
-        kind=ProviderTask.Kind.IMAGE_TO_MODEL,
-        source_version=creation.current_version,
-    )
-
-
-def approve(*, actor, ip_hash: str, creation: Creation, request_id: str = "") -> Creation:
-    if creation.current_version_id is None:
-        raise GuardFailed("Ainda não há imagem para aprovar.", code="no_image")
-
-    # Voltou ao 2D sem mudar a imagem: o 3D já pago continua valendo.
-    if creation.current_model_id is not None:
-        apply_transition(
+        creation.save(update_fields=["current_version", "updated_at"])
+        record_event(
             instance=creation,
-            fsm=CREATION_FSM,
-            event="reuse_model",
+            event="version_applied",
             actor=actor,
             request_id=request_id,
+            payload={"version": version.number},
         )
-        creation.refresh_from_db()
-        return creation
-
-    apply_transition(
-        instance=creation,
-        fsm=CREATION_FSM,
-        event="approve",
-        actor=actor,
-        effects=lambda: _enqueue_model(actor=actor, ip_hash=ip_hash, creation=creation),
-        request_id=request_id,
-    )
-    creation.refresh_from_db()
-    return creation
-
-
-def go_back(*, actor, creation: Creation, request_id: str = "") -> Creation:
-    """Volta à validação do 2D. O modelo é mantido e reaproveitado se o 2D não mudar."""
-    apply_transition(
-        instance=creation, fsm=CREATION_FSM, event="back", actor=actor, request_id=request_id
-    )
     creation.refresh_from_db()
     return creation
 
@@ -350,9 +284,8 @@ def purge_expired_assets() -> dict:
 
     deleted_cutoff = now - timedelta(days=business["DELETED_CREATION_PURGE_DAYS"])
     deleted = Creation.objects.filter(deleted_at__lt=deleted_cutoff).exclude(pk__in=with_order)
-    for creation in deleted.prefetch_related("versions__asset", "models_3d__asset"):
+    for creation in deleted.prefetch_related("versions__asset"):
         assets = [v.asset for v in creation.versions.all()]
-        assets += [m.asset for m in creation.models_3d.all()]
         source = getattr(creation, "input", None)
         if source is not None and source.photo is not None:
             assets.append(source.photo)

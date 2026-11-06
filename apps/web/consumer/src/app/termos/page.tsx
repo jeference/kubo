@@ -28,8 +28,8 @@ export default function TermsPage() {
       </p>
       <h2>Prévia e peça impressa</h2>
       <p>
-        A imagem e o modelo 3D são prévias. A peça é impressa em filamento, com até 4 cores, e pode
-        ter diferenças de cor, forma e detalhe em relação à prévia.
+        A imagem é uma prévia. A peça é impressa em filamento, com até 4 cores, e pode ter
+        diferenças de cor, forma e detalhe em relação a ela.
       </p>
       <h2>Limites de uso</h2>
       <p>

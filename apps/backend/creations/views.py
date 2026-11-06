@@ -100,28 +100,6 @@ class CreationRetryView(_WriteActionView):
         return Response(_detail(creation), status=status.HTTP_202_ACCEPTED)
 
 
-class CreationApproveView(_WriteActionView):
-    @extend_schema(request=None, responses={202: s.CreationDetailSerializer})
-    def post(self, request, creation_id):
-        actor, ip_hash = _context(request)
-        creation = services.get_creation(actor, creation_id)
-        services.approve(
-            actor=actor, ip_hash=ip_hash, creation=creation, request_id=request_id_of(request)
-        )
-        return Response(_detail(creation), status=status.HTTP_202_ACCEPTED)
-
-
-class CreationBackView(APIView):
-    permission_classes = [IsActor]
-
-    @extend_schema(request=None, responses=s.CreationDetailSerializer)
-    def post(self, request, creation_id):
-        actor = actor_from_request(request)
-        creation = services.get_creation(actor, creation_id)
-        services.go_back(actor=actor, creation=creation, request_id=request_id_of(request))
-        return Response(_detail(creation))
-
-
 class CreationEditView(_WriteActionView):
     @extend_schema(request=s.EditRequestSerializer, responses={202: s.CreationDetailSerializer})
     def post(self, request, creation_id):

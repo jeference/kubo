@@ -20,12 +20,10 @@ _TASK_KIND_TO_QUOTA = {
     ProviderTask.Kind.TEXT_TO_IMAGE: QuotaReservation.Kind.IMAGE,
     ProviderTask.Kind.PHOTO_TO_IMAGE: QuotaReservation.Kind.IMAGE,
     ProviderTask.Kind.IMAGE_EDIT: QuotaReservation.Kind.EDIT,
-    ProviderTask.Kind.IMAGE_TO_MODEL: QuotaReservation.Kind.MODEL,
 }
 _LIMIT_MESSAGES = {
     QuotaReservation.Kind.IMAGE: "Você atingiu o limite de imagens de hoje.",
     QuotaReservation.Kind.EDIT: "Você atingiu o limite de edições de hoje.",
-    QuotaReservation.Kind.MODEL: "Você atingiu o limite de modelos 3D de hoje.",
 }
 
 
@@ -94,11 +92,6 @@ def reserve(*, actor, ip_hash: str, task_kind: str) -> str:
         raise QuotaExceeded(
             "Aguarde as gerações em andamento terminarem.", code="too_many_active_tasks"
         )
-    if task_kind == ProviderTask.Kind.IMAGE_TO_MODEL and (
-        active.filter(kind=ProviderTask.Kind.IMAGE_TO_MODEL).count()
-        >= business["MAX_ACTIVE_MODEL_TASKS"]
-    ):
-        raise QuotaExceeded("Aguarde o modelo em andamento terminar.", code="too_many_active_tasks")
     return kind
 
 

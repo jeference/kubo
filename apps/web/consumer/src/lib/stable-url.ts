@@ -1,5 +1,5 @@
 /**
- * URLs assinadas mudam a cada resposta. Sem isto, cada polling baixaria de novo a imagem e o GLB.
+ * URLs assinadas mudam a cada resposta. Sem isto, cada polling baixaria de novo as imagens.
  * Mantém a URL de cada arquivo enquanto ela ainda é válida (a assinatura dura 5 minutos).
  */
 const REUSE_MS = 4 * 60 * 1000;

@@ -158,19 +158,17 @@ BUSINESS = {
     "ACCOUNT_CODE_TTL_MINUTES": 15,
     "ACCOUNT_CODE_RESEND_COOLDOWN_SECONDS": 60,
     # RN-04: limites por dia e por sessão ou conta.
-    "QUOTA_PER_DAY": {"image": 10, "edit": 15, "model": 6},
-    "QUOTA_PER_IP_PER_DAY": {"image": 40, "edit": 60, "model": 24},
+    "QUOTA_PER_DAY": {"image": 10, "edit": 15},
+    "QUOTA_PER_IP_PER_DAY": {"image": 40, "edit": 60},
     # RN-05: tarefas simultâneas.
     "MAX_ACTIVE_TASKS": 2,
-    "MAX_ACTIVE_MODEL_TASKS": 1,
     # RN-06: teto global de gasto diário com IA. Sem custo informado, vale a estimativa.
     "DAILY_SPEND_CAP_USD": env.float("DAILY_SPEND_CAP_USD", default=30.0),
-    "ESTIMATED_COST_USD": {"image": 0.02, "edit": 0.02, "model": 0.06},
+    "ESTIMATED_COST_USD": {"image": 0.02, "edit": 0.02},
     # Worker.
     "TASK_MAX_ATTEMPTS": 3,
     "TASK_LEASE_SECONDS": 150,
-    "MODEL_TIMEOUT_SECONDS": 600,
-    "MODEL_POLL_SECONDS": 2,
+    "TASK_TIMEOUT_SECONDS": 300,
     "WORKER_THREADS": env.int("WORKER_THREADS", default=8),
     # Upload de foto e textos.
     "PHOTO_MAX_BYTES": 10 * 1024 * 1024,
@@ -204,9 +202,6 @@ IMAGE_GENERATION_ADAPTER = env(
     "IMAGE_GENERATION_ADAPTER",
     default="integrations.adapters.runware.RunwareImageGenerationAdapter",
 )
-MODEL_3D_ADAPTER = env(
-    "MODEL_3D_ADAPTER", default="integrations.adapters.runware.RunwareModel3DAdapter"
-)
 PAYMENT_GATEWAY_ADAPTER = env(
     "PAYMENT_GATEWAY_ADAPTER", default="integrations.adapters.abacatepay.AbacatePayAdapter"
 )
@@ -226,30 +221,6 @@ EMAIL_ADAPTER = env(
 # Runware.
 RUNWARE_API_KEY = env("RUNWARE_API_KEY", default="")
 RUNWARE_IMAGE_MODEL = env("RUNWARE_IMAGE_MODEL", default="openai:gpt-image@2")
-RUNWARE_3D_MODEL = env("RUNWARE_3D_MODEL", default="microsoft:trellis-2@4b")
-TRELLIS_PRESETS = {
-    "low": {"resolution": 1024, "textureSize": 2048, "decimationTarget": 200000},
-    "medium": {
-        "resolution": 1024,
-        "textureSize": 2048,
-        "decimationTarget": 350000,
-        "sparseStructure": {"steps": 20},
-        "shapeSlat": {"steps": 20},
-        "texSlat": {"steps": 16},
-    },
-    "high": {
-        "resolution": 1536,
-        "textureSize": 4096,
-        "decimationTarget": 500000,
-        "sparseStructure": {"steps": 30},
-        "shapeSlat": {"steps": 30},
-        "texSlat": {"steps": 24},
-    },
-}
-TRELLIS_PRESET = env("TRELLIS_PRESET", default="low")
-if TRELLIS_PRESET not in TRELLIS_PRESETS:
-    raise ImproperlyConfigured(f"TRELLIS_PRESET inválido: {TRELLIS_PRESET!r}.")
-TRELLIS_SETTINGS = TRELLIS_PRESETS[TRELLIS_PRESET]
 
 # AbacatePay.
 ABACATE_PAY_BASE_URL = env("ABACATE_PAY_BASE_URL", default="https://api.abacatepay.com/v2")

@@ -9,13 +9,7 @@ export type OrderStatus =
   | "expired"
   | "refunded";
 
-export type CreationStatus =
-  | "generating_image"
-  | "image_failed"
-  | "awaiting_approval"
-  | "generating_model"
-  | "model_failed"
-  | "ready";
+export type CreationStatus = "generating_image" | "image_failed" | "ready";
 
 /** `Record` exaustivo: um status novo sem rótulo é erro de compilação. */
 export const ORDER_STATUS: Record<OrderStatus, { label: string; tone: StatusTone }> = {
@@ -31,8 +25,5 @@ export const ORDER_STATUS: Record<OrderStatus, { label: string; tone: StatusTone
 export const CREATION_STATUS: Record<CreationStatus, { label: string; tone: StatusTone }> = {
   generating_image: { label: "Gerando imagem", tone: "progress" },
   image_failed: { label: "Não deu certo", tone: "danger" },
-  awaiting_approval: { label: "Imagem pronta", tone: "neutral" },
-  generating_model: { label: "Gerando 3D", tone: "progress" },
-  model_failed: { label: "Não deu certo", tone: "danger" },
   ready: { label: "Pronta para comprar", tone: "success" },
 };

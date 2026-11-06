@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('key', models.CharField(max_length=255, unique=True)),
-                ('kind', models.CharField(choices=[('photo', 'Foto do cliente'), ('image', 'Imagem gerada'), ('model', 'Modelo 3D'), ('production', 'Arquivo de produção')], max_length=16)),
+                ('kind', models.CharField(choices=[('photo', 'Foto do cliente'), ('image', 'Imagem gerada'), ('production', 'Arquivo de produção')], max_length=16)),
                 ('mime', models.CharField(max_length=64)),
                 ('size_bytes', models.PositiveBigIntegerField()),
                 ('sha256', models.CharField(max_length=64)),

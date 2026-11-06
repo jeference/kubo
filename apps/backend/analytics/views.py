@@ -13,9 +13,7 @@ from common.permissions import IsPublic
 ALLOWED_EVENTS = {
     "page_viewed",
     "prompt_submitted",
-    "image_approved",
     "edit_requested",
-    "model_viewed",
     "size_selected",
     "item_added_to_cart",
     "buy_now_clicked",

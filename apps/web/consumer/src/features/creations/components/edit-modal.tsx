@@ -20,7 +20,7 @@ import { messageOf } from "@/lib/errors";
 const MAX_INSTRUCTION = 200;
 const SWIPE_THRESHOLD = 20;
 const BACKGROUND_LOST =
-  "O fundo saiu do branco, o que pode piorar o modelo 3D. Escolha outra versão ou peça para voltar ao fundo branco.";
+  "O fundo saiu do branco, o que pode atrapalhar a produção da peça. Escolha outra versão ou peça para voltar ao fundo branco.";
 const REFUSED =
   "Essa edição esbarrou nas regras de conteúdo. Personagens e marcas conhecidos, nudez e violência costumam ser recusados. Tente descrever de outro jeito.";
 const FAILED = "Não conseguimos editar agora. Tente de novo.";
@@ -259,11 +259,6 @@ function Editor({ creation, onClose }: { creation: Creation; onClose: () => void
             <div ref={chatEndRef} />
           </div>
 
-          {creation.model && hasChange && (
-            <p className="text-xs text-muted">
-              Ao concluir, o modelo 3D atual será descartado e você poderá gerar outro.
-            </p>
-          )}
           <div className="flex shrink-0 items-end gap-2 rounded-xl bg-surface p-3 lg:block">
             <textarea
               value={draft}

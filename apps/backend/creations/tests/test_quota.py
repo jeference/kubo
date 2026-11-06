@@ -28,7 +28,7 @@ def test_quota_is_debited_only_on_success(visitor_client):
 
 
 def test_daily_limit_blocks(visitor_client, settings):
-    _business(settings, QUOTA_PER_DAY={"image": 1, "edit": 15, "model": 6})
+    _business(settings, QUOTA_PER_DAY={"image": 1, "edit": 15})
     assert _create(visitor_client).status_code == 202
     drain_worker()
     response = _create(visitor_client)
@@ -38,7 +38,7 @@ def test_daily_limit_blocks(visitor_client, settings):
 
 
 def test_ip_limit_applies_across_sessions(visitor_client, other_visitor_client, settings):
-    _business(settings, QUOTA_PER_IP_PER_DAY={"image": 1, "edit": 60, "model": 24})
+    _business(settings, QUOTA_PER_IP_PER_DAY={"image": 1, "edit": 60})
     assert _create(visitor_client).status_code == 202
     assert _create(other_visitor_client).status_code == 429
 

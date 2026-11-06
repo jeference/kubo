@@ -13,30 +13,6 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='CostParameters',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('globalid', models.UUIDField(default=uuid.uuid4, editable=False, unique=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('version', models.PositiveIntegerField(unique=True)),
-                ('density_g_cm3', models.DecimalField(decimal_places=3, max_digits=5)),
-                ('wall_mm', models.DecimalField(decimal_places=2, max_digits=5)),
-                ('infill_fraction', models.DecimalField(decimal_places=3, max_digits=4)),
-                ('cost_per_gram_cents', models.DecimalField(decimal_places=2, max_digits=8)),
-                ('cost_per_hour_cents', models.DecimalField(decimal_places=2, max_digits=8)),
-                ('grams_per_hour', models.DecimalField(decimal_places=2, max_digits=6)),
-                ('purge_grams', models.DecimalField(decimal_places=2, max_digits=6)),
-                ('packaging_cents', models.PositiveIntegerField()),
-                ('gateway_fee_fraction', models.DecimalField(decimal_places=4, max_digits=5)),
-                ('min_margin_fraction', models.DecimalField(decimal_places=3, max_digits=4)),
-            ],
-            options={
-                'ordering': ['-version'],
-                'abstract': False,
-            },
-        ),
-        migrations.CreateModel(
             name='Filament',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),

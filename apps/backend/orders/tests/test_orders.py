@@ -3,7 +3,6 @@ from __future__ import annotations
 import uuid
 
 from catalog.models import ProductSize
-from creations.models import CostEstimate
 from orders.models import Address, Order
 from orders.tests.helpers import add_to_cart, order_payload, place_order, post_order, quote_for
 
@@ -90,10 +89,10 @@ def test_shipping_changed_requires_confirmation(visitor_client, monkeypatch):
     assert confirmed.data["shipping_cents"] == 9999
 
 
-def test_blocked_size_rejected_at_closing(visitor_client):
+def test_inactive_size_rejected_at_closing(visitor_client):
     item = add_to_cart(visitor_client)
     quote = quote_for(visitor_client, [item["id"]])[0]
-    CostEstimate.objects.filter(size__code="6cm").update(is_blocked=True)
+    ProductSize.objects.filter(code="6cm").update(is_active=False)
     response = post_order(visitor_client, order_payload([item["id"]], quote["id"]))
     assert response.status_code == 422
     assert response.data["code"] == "item_unavailable"

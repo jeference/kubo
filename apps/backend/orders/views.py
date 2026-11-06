@@ -19,7 +19,7 @@ from payments import services as payments
 
 
 def _cart_payload(actor) -> dict:
-    items = list(services.cart_items(actor).select_related("model__source_version__asset"))
+    items = list(services.cart_items(actor))
     available = [item for item in items if not services.unavailable_reason(item)]
     return {
         "items": items,

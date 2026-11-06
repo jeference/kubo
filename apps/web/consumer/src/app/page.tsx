@@ -7,7 +7,7 @@ const STEPS = [
   },
   {
     title: "Ajuste até ficar do seu jeito",
-    text: "Peça mudanças conversando. Quando gostar, a imagem vira um modelo 3D que você pode girar.",
+    text: "Peça mudanças conversando, até a imagem ficar do jeito que você quer.",
   },
   {
     title: "Receba em casa",
@@ -24,7 +24,7 @@ const QUESTIONS = [
   {
     question: "A peça fica igual à imagem?",
     answer:
-      "A imagem e o modelo 3D são uma prévia. A peça é impressa em filamento com até 4 cores, então cores e detalhes podem variar.",
+      "A imagem é uma prévia. A peça é impressa em filamento com até 4 cores, então forma, cores e detalhes podem variar.",
   },
   {
     question: "Quais são as formas de pagamento?",

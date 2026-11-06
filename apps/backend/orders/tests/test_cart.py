@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 from catalog.models import ProductSize
-from conftest import make_ready_creation
-from creations.models import CostEstimate
+from conftest import drain_worker, make_ready_creation
 from orders.tests.helpers import add_to_cart
 
 
@@ -59,34 +58,31 @@ def test_cannot_add_other_visitors_creation(visitor_client, other_visitor_client
     assert response.status_code == 404
 
 
-def test_blocked_size_cannot_be_added_and_is_listed(visitor_client):
-    creation = make_ready_creation(visitor_client)
-    size = ProductSize.objects.get(code="4cm")
-    CostEstimate.objects.filter(size=size).update(is_blocked=True)
-    detail = visitor_client.get(f"/api/creations/{creation['id']}/").data
-    assert str(size.globalid) in detail["blocked_size_ids"]
-    response = visitor_client.post(
-        "/api/cart/items/",
-        {"creation_id": creation["id"], "size_id": str(size.globalid), "quantity": 1},
-    )
-    assert response.status_code == 422
-    assert response.data["code"] == "size_blocked"
+def test_inactive_size_makes_item_unavailable(visitor_client):
+    item = add_to_cart(visitor_client)
+    ProductSize.objects.filter(code="6cm").update(is_active=False)
+    cart = visitor_client.get("/api/cart/").data
+    assert cart["items"][0]["unavailable_reason"]
+    assert cart["subtotal_cents"] == 0
+    assert item["id"] == cart["items"][0]["id"]
 
 
-def test_item_becomes_unavailable_when_creation_changes(visitor_client):
+def test_editing_after_adding_keeps_the_item_and_its_image(visitor_client):
     creation = make_ready_creation(visitor_client)
-    add_to_cart(visitor_client, creation=creation)
+    item = add_to_cart(visitor_client, creation=creation)
     visitor_client.post(
         f"/api/creations/{creation['id']}/edits/",
         {"version_id": creation["versions"][0]["id"], "instruction": "azul"},
     )
-    from conftest import drain_worker
-
     drain_worker()
     versions = visitor_client.get(f"/api/creations/{creation['id']}/").data["versions"]
     visitor_client.post(
         f"/api/creations/{creation['id']}/apply-version/", {"version_id": versions[1]["id"]}
     )
     cart = visitor_client.get("/api/cart/").data
-    assert cart["items"][0]["unavailable_reason"]
-    assert cart["subtotal_cents"] == 0
+    assert cart["items"][0]["unavailable_reason"] == ""
+    assert cart["subtotal_cents"] == item["line_total_cents"]
+
+    # A nova imagem entra como outro item, no mesmo tamanho.
+    add_to_cart(visitor_client, creation=creation)
+    assert len(visitor_client.get("/api/cart/").data["items"]) == 2

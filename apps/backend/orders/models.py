@@ -28,14 +28,17 @@ class Cart(BaseModel):
 class CartItem(BaseModel):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name="items")
     creation = models.ForeignKey("creations.Creation", on_delete=models.CASCADE, related_name="+")
-    model = models.ForeignKey("creations.Model3D", on_delete=models.CASCADE, related_name="+")
+    # A imagem escolhida. Editar a criação depois não muda o item.
+    version = models.ForeignKey(
+        "creations.ImageVersion", on_delete=models.CASCADE, related_name="+"
+    )
     size = models.ForeignKey("catalog.ProductSize", on_delete=models.PROTECT, related_name="+")
     quantity = models.PositiveSmallIntegerField(default=1)
 
     class Meta(BaseModel.Meta):
         ordering = ["created_at"]
         constraints = [
-            models.UniqueConstraint(fields=["cart", "model", "size"], name="cart_item_uq")
+            models.UniqueConstraint(fields=["cart", "version", "size"], name="cart_item_uq")
         ]
 
 
@@ -139,7 +142,6 @@ class OrderItem(BaseModel):
     version = models.ForeignKey(
         "creations.ImageVersion", on_delete=models.PROTECT, related_name="+"
     )
-    model = models.ForeignKey("creations.Model3D", on_delete=models.PROTECT, related_name="+")
     size = models.ForeignKey("catalog.ProductSize", on_delete=models.PROTECT, related_name="+")
     size_label = models.CharField(max_length=40)
     longest_side_mm = models.PositiveIntegerField()

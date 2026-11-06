@@ -12,7 +12,7 @@ from common.exceptions import GuardFailed
 from integrations.ports import get_media_storage_port
 from media.models import Asset
 
-_EXTENSIONS = {"image/png": "png", "model/gltf-binary": "glb"}
+_EXTENSIONS = {"image/png": "png"}
 _ALLOWED_FORMATS = {"PNG", "JPEG", "WEBP"}
 
 

@@ -38,7 +38,7 @@ class CartItemSerializer(GlobalIdSerializer):
         return item.size.price_cents * item.quantity
 
     def get_image_url(self, item) -> str:
-        return media.signed_url(item.model.source_version.asset)
+        return media.signed_url(item.version.asset)
 
     def get_unavailable_reason(self, item) -> str:
         return services.unavailable_reason(item)

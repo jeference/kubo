@@ -14,7 +14,6 @@ from catalog.models import ProductSize
 from common.crypto import encrypt, sha256_hex
 from common.exceptions import Conflict, GuardFailed, ResourceNotFound
 from common.fsm import apply_transition
-from creations import costing
 from creations.models import Creation
 from creations.services import creations_for
 from notifications.services import send_email
@@ -55,35 +54,27 @@ def get_or_create_cart(actor) -> Cart:
 def cart_items(actor):
     return CartItem.objects.filter(
         cart__in=Cart.objects.filter(**_cart_filter(actor))
-    ).select_related("creation", "creation__current_version__asset", "model", "size")
+    ).select_related("creation", "version__asset", "size")
 
 
 def unavailable_reason(item: CartItem) -> str:
     """Motivo pelo qual o item não pode ser comprado agora. Vazio se pode."""
     if item.creation.deleted_at is not None:
         return "Esta criação foi excluída."
-    if item.model.discarded_at is not None or item.creation.current_model_id != item.model_id:
-        return "Esta criação foi alterada. Gere o 3D de novo para comprar."
     if not item.size.is_active:
         return "Este tamanho não está mais disponível."
-    if item.size_id in costing.blocked_size_ids(item.model):
-        return "Este tamanho não está disponível para este modelo."
     return ""
 
 
 def add_item(*, actor, creation_id, size_id, quantity: int) -> CartItem:
-    creation = (
-        creations_for(actor).select_related("current_model").filter(globalid=creation_id).first()
-    )
+    creation = creations_for(actor).filter(globalid=creation_id).first()
     if creation is None:
         raise ResourceNotFound("Criação não encontrada.")
-    if creation.status != Creation.Status.READY or creation.current_model is None:
+    if creation.status != Creation.Status.READY or creation.current_version_id is None:
         raise GuardFailed("Esta criação ainda não está pronta.", code="creation_not_ready")
     size = ProductSize.objects.filter(globalid=size_id, is_active=True).first()
     if size is None:
         raise ResourceNotFound("Tamanho não encontrado.")
-    if size.pk in costing.blocked_size_ids(creation.current_model):
-        raise GuardFailed("Este tamanho não está disponível para este modelo.", code="size_blocked")
     limit = settings.BUSINESS["MAX_ITEM_QUANTITY"]
     if not 1 <= quantity <= limit:
         raise GuardFailed(f"A quantidade deve ser de 1 a {limit}.", code="invalid_quantity")
@@ -91,7 +82,7 @@ def add_item(*, actor, creation_id, size_id, quantity: int) -> CartItem:
     with transaction.atomic():
         item, created = CartItem.objects.select_for_update().get_or_create(
             cart=cart,
-            model=creation.current_model,
+            version_id=creation.current_version_id,
             size=size,
             defaults={"creation": creation, "quantity": quantity},
         )
@@ -146,7 +137,7 @@ def transfer_visitor_cart(*, visitor, user) -> None:
         return
     limit = settings.BUSINESS["MAX_ITEM_QUANTITY"]
     for item in source.items.all():
-        existing = target.items.filter(model=item.model, size=item.size).first()
+        existing = target.items.filter(version=item.version, size=item.size).first()
         if existing:
             existing.quantity = min(existing.quantity + item.quantity, limit)
             existing.save(update_fields=["quantity", "updated_at"])
@@ -294,8 +285,7 @@ def create_order(
                 OrderItem.objects.create(
                     order=order,
                     creation=item.creation,
-                    version=item.model.source_version,
-                    model=item.model,
+                    version=item.version,
                     size=item.size,
                     size_label=item.size.label,
                     longest_side_mm=item.size.longest_side_mm,
@@ -427,4 +417,4 @@ def clear_paid_items_from_cart(order: Order) -> None:
     filters = {"visitor": order.visitor} if order.user_id is None else {"user": order.user}
     carts = Cart.objects.filter(**filters)
     for item in order.items.all():
-        CartItem.objects.filter(cart__in=carts, model=item.model, size=item.size).delete()
+        CartItem.objects.filter(cart__in=carts, version=item.version, size=item.size).delete()

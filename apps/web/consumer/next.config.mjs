@@ -2,14 +2,12 @@ const isProduction = process.env.NODE_ENV === "production";
 
 const contentSecurityPolicy = [
   "default-src 'self'",
-  // wasm-unsafe-eval: os decodificadores de malha do carregador 3D usam WebAssembly.
-  "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'",
+  "script-src 'self' 'unsafe-inline'",
   "style-src 'self' 'unsafe-inline'",
+  // As imagens vêm do storage por URL assinada.
   "img-src 'self' data: blob: https:",
   "font-src 'self'",
-  // GLB e imagens vêm do storage por URL assinada.
-  "connect-src 'self' blob: data: https:",
-  "worker-src 'self' blob:",
+  "connect-src 'self'",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",

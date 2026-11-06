@@ -17,8 +17,6 @@ from integrations.ports import (
     ContentRefused,
     GeneratedImage,
     ImageGenerationPort,
-    Model3DPort,
-    Model3DStatus,
     ProviderPermanentError,
     ProviderTemporaryError,
 )
@@ -119,51 +117,3 @@ class RunwareImageGenerationAdapter(ImageGenerationPort):
         task = self._task(prompt=prompt, size=size)
         task["inputs"] = {"referenceImages": [_to_data_uri(image)]}
         return self._result(_run(task, "edit_image"))
-
-
-class RunwareModel3DAdapter(Model3DPort):
-    provider = "runware"
-
-    @property
-    def model_name(self) -> str:
-        return settings.RUNWARE_3D_MODEL
-
-    def submit(self, *, image: bytes) -> str:
-        task_id = str(uuid.uuid4())
-        _run(
-            {
-                "taskType": "3dInference",
-                "taskUUID": task_id,
-                "model": settings.RUNWARE_3D_MODEL,
-                "deliveryMethod": "async",
-                "outputType": "URL",
-                "outputFormat": "GLB",
-                "includeCost": True,
-                "inputs": {"image": _to_data_uri(image)},
-                "settings": settings.TRELLIS_SETTINGS,
-            },
-            "submit_model",
-        )
-        return task_id
-
-    def get(self, *, external_id: str) -> Model3DStatus:
-        # Formato de getResponse ainda não confirmado em tarefa real: leitura defensiva.
-        try:
-            data = _post({"taskType": "getResponse", "taskUUID": external_id}, "get_model")
-        except _RunwareError as exc:
-            status = "refused" if _is_refusal(exc) else "failed"
-            return Model3DStatus(status=status, error=exc.message)
-
-        item = next((d for d in data if d.get("taskUUID") == external_id), None)
-        if item is None:
-            return Model3DStatus(status="processing")
-        files = (item.get("outputs") or {}).get("files") or []
-        if files and files[0].get("url"):
-            return Model3DStatus(
-                status="success", file_url=files[0]["url"], cost_usd=item.get("cost")
-            )
-        if item.get("status") == "error":
-            message = str(item.get("message", "Falha ao gerar o modelo."))
-            status = "refused" if _REFUSAL.search(message) else "failed"
-            return Model3DStatus(status=status, error=message)
-        return Model3DStatus(status="processing")

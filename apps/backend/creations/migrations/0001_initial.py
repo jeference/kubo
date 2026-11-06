@@ -12,7 +12,6 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('accounts', '0001_initial'),
-        ('catalog', '0001_initial'),
         ('media', '0001_initial'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
@@ -25,7 +24,7 @@ class Migration(migrations.Migration):
                 ('globalid', models.UUIDField(default=uuid.uuid4, editable=False, unique=True)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
-                ('status', models.CharField(choices=[('generating_image', 'Gerando imagem'), ('image_failed', 'Falha na imagem'), ('awaiting_approval', 'Aguardando aprovação'), ('generating_model', 'Gerando 3D'), ('model_failed', 'Falha no 3D'), ('ready', 'Pronta para comprar')], default='generating_image', max_length=24)),
+                ('status', models.CharField(choices=[('generating_image', 'Gerando imagem'), ('image_failed', 'Falha na imagem'), ('ready', 'Pronta para comprar')], default='generating_image', max_length=24)),
                 ('style', models.CharField(max_length=24)),
                 ('last_error_code', models.CharField(blank=True, max_length=32)),
                 ('last_error_message', models.CharField(blank=True, max_length=255)),
@@ -84,66 +83,17 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to='creations.imageversion'),
         ),
         migrations.CreateModel(
-            name='Model3D',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('globalid', models.UUIDField(default=uuid.uuid4, editable=False, unique=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('triangles', models.PositiveIntegerField(default=0)),
-                ('has_texture', models.BooleanField(default=False)),
-                ('unit_volume', models.FloatField(blank=True, null=True)),
-                ('unit_area', models.FloatField(blank=True, null=True)),
-                ('estimate_method', models.CharField(blank=True, max_length=24)),
-                ('discarded_at', models.DateTimeField(blank=True, null=True)),
-                ('asset', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='+', to='media.asset')),
-                ('creation', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='models_3d', to='creations.creation')),
-                ('source_version', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='+', to='creations.imageversion')),
-            ],
-            options={
-                'ordering': ['-created_at'],
-                'abstract': False,
-            },
-        ),
-        migrations.AddField(
-            model_name='creation',
-            name='current_model',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to='creations.model3d'),
-        ),
-        migrations.CreateModel(
-            name='CostEstimate',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('globalid', models.UUIDField(default=uuid.uuid4, editable=False, unique=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('grams', models.FloatField()),
-                ('hours', models.FloatField()),
-                ('cost_cents', models.PositiveIntegerField()),
-                ('margin_fraction', models.FloatField()),
-                ('is_blocked', models.BooleanField(default=False)),
-                ('parameters', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='+', to='catalog.costparameters')),
-                ('size', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='+', to='catalog.productsize')),
-                ('model', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='cost_estimates', to='creations.model3d')),
-            ],
-            options={
-                'ordering': ['-created_at'],
-                'abstract': False,
-            },
-        ),
-        migrations.CreateModel(
             name='ProviderTask',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('globalid', models.UUIDField(default=uuid.uuid4, editable=False, unique=True)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
-                ('kind', models.CharField(choices=[('text_to_image', 'Texto para imagem'), ('photo_to_image', 'Foto para imagem'), ('image_edit', 'Edição de imagem'), ('image_to_model', 'Imagem para 3D')], max_length=16)),
-                ('status', models.CharField(choices=[('queued', 'Na fila'), ('running', 'Em execução'), ('waiting_provider', 'Aguardando o provedor'), ('succeeded', 'Concluída'), ('failed', 'Falhou'), ('cancelled', 'Cancelada')], default='queued', max_length=20)),
+                ('kind', models.CharField(choices=[('text_to_image', 'Texto para imagem'), ('photo_to_image', 'Foto para imagem'), ('image_edit', 'Edição de imagem')], max_length=16)),
+                ('status', models.CharField(choices=[('queued', 'Na fila'), ('running', 'Em execução'), ('succeeded', 'Concluída'), ('failed', 'Falhou'), ('cancelled', 'Cancelada')], default='queued', max_length=20)),
                 ('instruction', models.CharField(blank=True, max_length=255)),
                 ('provider', models.CharField(blank=True, max_length=32)),
                 ('model_name', models.CharField(blank=True, max_length=64)),
-                ('external_id', models.CharField(blank=True, max_length=128)),
                 ('rendered_prompt', models.TextField(blank=True)),
                 ('prompt_version', models.CharField(blank=True, max_length=16)),
                 ('attempts', models.PositiveSmallIntegerField(default=0)),
@@ -163,11 +113,6 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.AddField(
-            model_name='model3d',
-            name='task',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to='creations.providertask'),
-        ),
-        migrations.AddField(
             model_name='imageversion',
             name='task',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to='creations.providertask'),
@@ -181,7 +126,7 @@ class Migration(migrations.Migration):
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('actor_key', models.CharField(max_length=32)),
                 ('ip_hash', models.CharField(blank=True, max_length=64)),
-                ('kind', models.CharField(choices=[('image', 'Geração 2D'), ('edit', 'Edição'), ('model', 'Modelo 3D')], max_length=8)),
+                ('kind', models.CharField(choices=[('image', 'Geração 2D'), ('edit', 'Edição')], max_length=8)),
                 ('day', models.DateField()),
                 ('state', models.CharField(choices=[('reserved', 'Reservada'), ('consumed', 'Consumida'), ('released', 'Liberada')], default='reserved', max_length=10)),
                 ('task', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='quota_reservation', to='creations.providertask')),
@@ -194,10 +139,6 @@ class Migration(migrations.Migration):
         migrations.AddIndex(
             model_name='creation',
             index=models.Index(fields=['user', '-created_at'], name='creations_c_user_id_a6be03_idx'),
-        ),
-        migrations.AddConstraint(
-            model_name='costestimate',
-            constraint=models.UniqueConstraint(fields=('model', 'size'), name='estimate_size_uq'),
         ),
         migrations.AddIndex(
             model_name='providertask',

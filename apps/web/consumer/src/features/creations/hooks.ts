@@ -18,9 +18,6 @@ function withStableUrls(creation: Creation): Creation {
       ...version,
       image_url: stableUrl(version.id, version.image_url),
     })),
-    model: creation.model
-      ? { ...creation.model, glb_url: stableUrl(creation.model.id, creation.model.glb_url) }
-      : null,
   };
 }
 
@@ -33,7 +30,9 @@ export function useCreation(id: string) {
     staleTime: 0,
     select: withStableUrls,
     queryFn: async () =>
-      unwrap(await api.GET("/api/creations/{creation_id}/", { params: { path: { creation_id: id } } })),
+      unwrap(
+        await api.GET("/api/creations/{creation_id}/", { params: { path: { creation_id: id } } }),
+      ),
     refetchInterval: (query) => (query.state.data?.is_generating ? GENERATION_POLL_MS : false),
   });
 }
@@ -96,19 +95,8 @@ export function useCreationAction(id: string) {
   const setCreation = useCreationSetter();
   const path = { params: { path: { creation_id: id } } };
 
-  const approve = useMutation({
-    mutationFn: async () => unwrap(await api.POST("/api/creations/{creation_id}/approve/", path)),
-    onSuccess: (creation) => {
-      setCreation(creation);
-      track("image_approved");
-    },
-  });
   const retry = useMutation({
     mutationFn: async () => unwrap(await api.POST("/api/creations/{creation_id}/retry/", path)),
-    onSuccess: setCreation,
-  });
-  const back = useMutation({
-    mutationFn: async () => unwrap(await api.POST("/api/creations/{creation_id}/back/", path)),
     onSuccess: setCreation,
   });
   const edit = useMutation({
@@ -139,7 +127,7 @@ export function useCreationAction(id: string) {
     onSuccess: setCreation,
   });
 
-  return { approve, retry, back, edit, cancelEdit, applyVersion };
+  return { retry, edit, cancelEdit, applyVersion };
 }
 
 export function useDeleteCreation() {
