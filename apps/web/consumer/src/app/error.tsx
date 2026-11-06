@@ -10,7 +10,7 @@ export default function ErrorPage({ reset }: { reset: () => void }) {
         title="Algo deu errado"
         description="Não conseguimos carregar esta página. Tente de novo em instantes."
         action={
-          <Button variant="accent" onClick={reset}>
+          <Button variant="primary" onClick={reset}>
             Tentar de novo
           </Button>
         }

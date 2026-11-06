@@ -23,7 +23,7 @@ export default function OrdersPage() {
             title="Nenhum pedido por aqui"
             description="Comprou em outro navegador? Recupere o link pelo seu e-mail."
             action={
-              <Button asChild variant="accent">
+              <Button asChild variant="primary">
                 <Link href="/acompanhar">Acompanhar pedido</Link>
               </Button>
             }
@@ -38,7 +38,7 @@ export default function OrdersPage() {
               <li key={order.id}>
                 <Link
                   href={`/pedidos/${order.id}`}
-                  className="flex items-center gap-4 rounded-2xl border border-line p-3 transition-colors hover:border-ink/30"
+                  className="flex items-center gap-4 rounded-2xl border border-line bg-surface p-3 shadow-card transition-colors hover:border-accent"
                 >
                   {order.thumbnail_url && (
                     // eslint-disable-next-line @next/next/no-img-element -- imagem dinâmica
@@ -49,7 +49,7 @@ export default function OrdersPage() {
                     />
                   )}
                   <span className="min-w-0 flex-1">
-                    <span className="block font-medium">{order.number}</span>
+                    <span className="block font-semibold">{order.number}</span>
                     <span className="block text-sm text-muted">
                       {formatDate(order.created_at)}, {order.item_count}{" "}
                       {order.item_count === 1 ? "peça" : "peças"}
@@ -57,7 +57,7 @@ export default function OrdersPage() {
                   </span>
                   <span className="flex flex-col items-end gap-1">
                     <StatusBadge label={badge.label} tone={badge.tone} />
-                    <span className="text-sm font-medium tabular-nums">
+                    <span className="text-sm font-semibold tabular-nums">
                       {formatBRL(order.total_cents)}
                     </span>
                   </span>

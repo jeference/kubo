@@ -5,6 +5,9 @@
   --ink: 20 20 20;
   --muted: 107 107 107;
   --line: 229 229 229;
+  /* Contorno dos controles: botão secundário, chips, contador, campos. */
+  --stroke: 214 214 214;
+  --stroke-hover: 171 171 171;
   --accent: 124 58 237;
   --accent-soft: 240 233 255;
   /* Amarelo neon: quase invisível sobre branco. Use como preenchimento ou sobre roxo. */

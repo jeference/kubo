@@ -1,6 +1,8 @@
 "use client";
 
 import { Button } from "@kubo/ui/button";
+import { Checkbox } from "@kubo/ui/checkbox";
+import { Textarea } from "@kubo/ui/input";
 import { cn } from "@kubo/ui/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@kubo/ui/popover";
 import { ChevronDown, ImagePlus, Sparkles, X } from "lucide-react";
@@ -114,7 +116,7 @@ export function PromptStep() {
               onRemove={() => setPhoto(null)}
             />
           </div>
-          <textarea
+          <Textarea
             value={prompt}
             onChange={(event) => setPrompt(event.target.value)}
             onKeyDown={(event) => {
@@ -129,7 +131,7 @@ export function PromptStep() {
                 ? "Opcional: peça uma mudança, como “com um chapéu de mago”"
                 : "Ex.: um gato astronauta sentado na lua"
             }
-            className="block w-full resize-none rounded-2xl bg-surface p-4 outline-none transition-shadow placeholder:text-muted/70 focus:ring-2 focus:ring-accent"
+            className="p-4 lg:text-base"
           />
 
           {isDragging && (
@@ -142,26 +144,22 @@ export function PromptStep() {
         </div>
 
         {photo && (
-          <label className="flex items-start gap-2 rounded-xl bg-sunken p-3 text-[13px] leading-snug">
-            <input
-              type="checkbox"
-              checked={rightsAccepted}
-              onChange={(event) => setRightsAccepted(event.target.checked)}
-              className="mt-0.5 size-4 accent-[rgb(var(--accent))]"
-            />
-            <span>
-              Tenho direitos sobre esta foto e o consentimento de quem aparece nela. Veja os{" "}
-              <Link href="/termos" className="underline" target="_blank">
-                Termos de Uso
-              </Link>
-              .
-            </span>
-          </label>
+          <Checkbox
+            className="rounded-2xl bg-sunken p-3"
+            checked={rightsAccepted}
+            onChange={(event) => setRightsAccepted(event.target.checked)}
+          >
+            Tenho direitos sobre esta foto e o consentimento de quem aparece nela. Veja os{" "}
+            <Link href="/termos" className="underline" target="_blank">
+              Termos de Uso
+            </Link>
+            .
+          </Checkbox>
         )}
 
         <Button
           type="submit"
-          variant="accent"
+          variant="primary"
           size="lg"
           disabled={!canSubmit}
           pending={start.isPending}
@@ -189,15 +187,14 @@ function StyleSelect({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger
-        aria-label={`Estilo ${selected.label}`}
-        className="flex items-center gap-2 rounded-xl border border-line py-1.5 pl-1.5 pr-3 text-sm font-medium transition-colors hover:border-ink/30"
-      >
-        <StyleSample src={selected.thumbnail} className="size-7" />
-        Estilo {selected.label}
-        <ChevronDown className="size-4 text-muted" />
+      <PopoverTrigger asChild>
+        <Button aria-label={`Estilo ${selected.label}`} className="pl-1.5 pr-4">
+          <StyleSample src={selected.thumbnail} className="size-8 rounded-full" />
+          Estilo {selected.label}
+          <ChevronDown className="text-muted" aria-hidden />
+        </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-1.5">
+      <PopoverContent className="w-80 p-2">
         <div role="listbox" aria-label="Estilo">
           {styles.map((option) => (
             <button
@@ -210,13 +207,15 @@ function StyleSelect({
                 setOpen(false);
               }}
               className={cn(
-                "flex w-full items-center gap-3 rounded-lg p-1.5 text-left transition-colors",
-                option.id === value ? "bg-accent-soft" : "hover:bg-ink/5",
+                "flex w-full items-center gap-3 rounded-xl p-1.5 text-left transition-colors",
+                option.id === value
+                  ? "bg-accent-soft ring-2 ring-inset ring-accent"
+                  : "hover:bg-sunken",
               )}
             >
-              <StyleSample src={option.thumbnail} className="size-16" />
+              <StyleSample src={option.thumbnail} className="size-16 rounded-lg" />
               <span>
-                <span className="block text-sm font-medium">Estilo {option.label}</span>
+                <span className="block text-sm font-semibold">Estilo {option.label}</span>
                 <span className="block text-[13px] text-muted">{HINTS[option.id]}</span>
               </span>
             </button>
@@ -230,11 +229,7 @@ function StyleSelect({
 function StyleSample({ src, className }: { src: string; className: string }) {
   return (
     // eslint-disable-next-line @next/next/no-img-element -- miniatura estática pequena
-    <img
-      src={src}
-      alt=""
-      className={cn("shrink-0 rounded-md border border-line object-cover", className)}
-    />
+    <img src={src} alt="" className={cn("shrink-0 border border-line object-cover", className)} />
   );
 }
 
@@ -279,14 +274,15 @@ function PhotoPicker({
         )}
       </button>
       {file && (
-        <button
-          type="button"
+        <Button
+          variant="floating"
+          size="icon-sm"
           onClick={onRemove}
           aria-label="Remover foto"
-          className="absolute -right-2 -top-2 flex size-7 items-center justify-center rounded-full border border-line bg-surface text-muted transition-colors hover:text-ink"
+          className="absolute -right-2 -top-2"
         >
-          <X className="size-4" />
-        </button>
+          <X aria-hidden />
+        </Button>
       )}
     </div>
   );

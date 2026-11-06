@@ -2,6 +2,7 @@
 
 import { unwrap } from "@kubo/api-client";
 import { useApiClient } from "@kubo/api-client/react";
+import { Callout } from "@kubo/ui/callout";
 import { Button } from "@kubo/ui/button";
 import { Input } from "@kubo/ui/input";
 import { Label } from "@kubo/ui/label";
@@ -19,7 +20,8 @@ export default function PasswordResetPage() {
   const [step, setStep] = useState<"email" | "code" | "done">("email");
 
   const request = useMutation({
-    mutationFn: async () => unwrap(await api.POST("/api/auth/password/reset/", { body: { email } })),
+    mutationFn: async () =>
+      unwrap(await api.POST("/api/auth/password/reset/", { body: { email } })),
     onSuccess: (data) => {
       toast.info(data.detail);
       setStep("code");
@@ -48,10 +50,10 @@ export default function PasswordResetPage() {
       <h1 className="font-display text-3xl font-semibold tracking-tight">Recuperar senha</h1>
       {step === "done" ? (
         <div className="mt-6 space-y-4">
-          <p className="rounded-2xl bg-accent-soft p-4 text-sm" role="status">
+          <Callout tone="accent" role="status" className="p-4">
             Senha redefinida. Por segurança, encerramos as sessões abertas.
-          </p>
-          <Button asChild variant="accent">
+          </Callout>
+          <Button asChild variant="primary">
             <Link href="/entrar">Entrar</Link>
           </Button>
         </div>
@@ -99,7 +101,7 @@ export default function PasswordResetPage() {
           )}
           <Button
             type="submit"
-            variant="accent"
+            variant="primary"
             className="w-full"
             pending={request.isPending || confirm.isPending}
           >

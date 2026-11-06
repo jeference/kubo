@@ -68,7 +68,7 @@ function LoginForm() {
             type="password"
             autoComplete="current-password"
           />
-          <Button type="submit" variant="accent" className="w-full" pending={login.isPending}>
+          <Button type="submit" variant="primary" className="w-full" pending={login.isPending}>
             Entrar
           </Button>
         </form>

@@ -30,11 +30,7 @@ function Account() {
     <div className="mx-auto max-w-xl space-y-8">
       <div className="flex items-center justify-between gap-3">
         <h1 className="font-display text-3xl font-semibold tracking-tight">Minha conta</h1>
-        <Button
-          variant="outline"
-          pending={logout.isPending}
-          onClick={() => logout.mutate("/")}
-        >
+        <Button variant="secondary" pending={logout.isPending} onClick={() => logout.mutate("/")}>
           Sair
         </Button>
       </div>
@@ -65,7 +61,7 @@ function ProfileForm({ user }: { user: SessionUser }) {
 
   return (
     <form
-      className="space-y-4 rounded-2xl border border-line p-5"
+      className="space-y-4 rounded-2xl border border-line bg-surface p-5 shadow-card"
       onSubmit={(event: FormEvent) => {
         event.preventDefault();
         save.mutate();
@@ -118,7 +114,7 @@ function PasswordForm() {
 
   return (
     <form
-      className="space-y-4 rounded-2xl border border-line p-5"
+      className="space-y-4 rounded-2xl border border-line bg-surface p-5 shadow-card"
       onSubmit={(event: FormEvent) => {
         event.preventDefault();
         change.mutate();
@@ -169,7 +165,7 @@ function DeleteAccount() {
 
   return (
     <form
-      className="space-y-4 rounded-2xl border border-danger/30 p-5"
+      className="space-y-4 rounded-2xl border border-danger/30 bg-surface p-5 shadow-card"
       onSubmit={(event: FormEvent) => {
         event.preventDefault();
         if (window.confirm("Excluir sua conta? Esta ação não pode ser desfeita.")) remove.mutate();

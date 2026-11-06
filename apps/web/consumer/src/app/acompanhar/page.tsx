@@ -2,6 +2,7 @@
 
 import { unwrap } from "@kubo/api-client";
 import { useApiClient } from "@kubo/api-client/react";
+import { Callout } from "@kubo/ui/callout";
 import { Button } from "@kubo/ui/button";
 import { Input } from "@kubo/ui/input";
 import { Label } from "@kubo/ui/label";
@@ -31,9 +32,9 @@ export default function TrackLookupPage() {
         Informe o e-mail usado na compra. Enviaremos o link de cada pedido.
       </p>
       {resend.isSuccess ? (
-        <p className="mt-6 rounded-2xl bg-accent-soft p-4 text-sm" role="status">
+        <Callout tone="accent" role="status" className="mt-6 p-4">
           {resend.data.detail}
-        </p>
+        </Callout>
       ) : (
         <form onSubmit={submit} className="mt-6 space-y-4">
           <div className="space-y-1.5">
@@ -47,7 +48,7 @@ export default function TrackLookupPage() {
               onChange={(event) => setEmail(event.target.value)}
             />
           </div>
-          <Button type="submit" variant="accent" className="w-full" pending={resend.isPending}>
+          <Button type="submit" variant="primary" className="w-full" pending={resend.isPending}>
             Enviar link
           </Button>
         </form>

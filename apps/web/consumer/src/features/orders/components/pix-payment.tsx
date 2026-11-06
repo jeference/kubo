@@ -2,6 +2,7 @@
 
 import { track } from "@kubo/analytics";
 import type { Schemas } from "@kubo/api-client";
+import { Card } from "@kubo/ui/card";
 import { Button } from "@kubo/ui/button";
 import { Check, Copy } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -34,14 +35,14 @@ export function PixPayment({ charge }: { charge: Schemas["Charge"] }) {
   }
 
   return (
-    <div className="space-y-4 rounded-2xl border border-line p-5 text-center">
+    <Card className="space-y-4 p-5 text-center">
       <h2 className="font-display text-xl font-semibold">Pague com PIX</h2>
       {charge.pix_qr_base64 && (
         // eslint-disable-next-line @next/next/no-img-element -- QR Code gerado pelo gateway
         <img
           src={charge.pix_qr_base64}
           alt="QR Code do PIX"
-          className="mx-auto size-56 rounded-xl border border-line"
+          className="mx-auto size-56 rounded-2xl border border-line"
         />
       )}
       <p className="text-sm text-muted">
@@ -56,16 +57,16 @@ export function PixPayment({ charge }: { charge: Schemas["Charge"] }) {
           "Este código venceu. Estamos conferindo o pagamento."
         )}
       </p>
-      <Button variant="accent" size="lg" className="w-full sm:w-auto" onClick={copy}>
+      <Button variant="primary" size="lg" className="w-full sm:w-auto" onClick={copy}>
         {copied ? <Check /> : <Copy />}
         {copied ? "Código copiado" : "Copiar código PIX"}
       </Button>
-      <p className="break-all rounded-xl bg-sunken p-3 text-left font-mono text-xs text-muted">
+      <p className="break-all rounded-2xl bg-sunken p-3 text-left font-mono text-xs text-muted">
         {charge.pix_br_code}
       </p>
       <p className="text-sm text-muted">
         Assim que o pagamento for identificado, esta página atualiza sozinha.
       </p>
-    </div>
+    </Card>
   );
 }

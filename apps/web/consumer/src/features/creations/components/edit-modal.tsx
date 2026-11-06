@@ -131,7 +131,7 @@ function Editor({ creation, onClose }: { creation: Creation; onClose: () => void
           <Dialog.Title className="font-display text-lg font-semibold">Editar imagem</Dialog.Title>
         </div>
         <Button
-          variant="accent"
+          variant="primary"
           disabled={!hasChange || isBusy}
           pending={actions.applyVersion.isPending}
           onClick={done}
@@ -161,7 +161,7 @@ function Editor({ creation, onClose }: { creation: Creation; onClose: () => void
                   <div className="h-full w-1/3 animate-indeterminate rounded-full bg-accent" />
                 </div>
                 <Button
-                  variant="outline"
+                  variant="secondary"
                   size="sm"
                   disabled={!activeTask}
                   pending={actions.cancelEdit.isPending}
@@ -229,7 +229,10 @@ function Editor({ creation, onClose }: { creation: Creation; onClose: () => void
           >
             {edits.map((version) => (
               <div key={version.id} className="space-y-3">
-                <UserMessage sourceUrl={urlOf(version.parent_id)} instruction={version.instruction} />
+                <UserMessage
+                  sourceUrl={urlOf(version.parent_id)}
+                  instruction={version.instruction}
+                />
                 <div className="flex items-center gap-2 text-sm">
                   <Sparkles className="size-4 text-accent" aria-hidden />
                   Pronto!
@@ -240,7 +243,7 @@ function Editor({ creation, onClose }: { creation: Creation; onClose: () => void
                   disabled={isBusy}
                   aria-label="Ver esta versão"
                   onClick={() => setSelectedId(version.id)}
-                  className="block size-28 overflow-hidden rounded-xl border border-line bg-surface transition hover:border-ink/30"
+                  className="block size-28 overflow-hidden rounded-2xl border border-line bg-surface transition hover:border-accent"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element -- imagem dinâmica */}
                   <img src={version.image_url} alt="" className="size-full object-cover" />
@@ -259,7 +262,7 @@ function Editor({ creation, onClose }: { creation: Creation; onClose: () => void
             <div ref={chatEndRef} />
           </div>
 
-          <div className="flex shrink-0 items-end gap-2 rounded-xl bg-surface p-3 lg:block">
+          <div className="flex shrink-0 items-end gap-2 rounded-2xl bg-surface p-3 lg:block">
             <textarea
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
@@ -277,11 +280,11 @@ function Editor({ creation, onClose }: { creation: Creation; onClose: () => void
               className="max-h-24 min-w-0 flex-1 resize-none bg-transparent py-1 text-base outline-none [field-sizing:content] placeholder:text-muted/70 lg:min-h-10 lg:w-full lg:py-0 lg:text-sm"
             />
             <div className="flex shrink-0 items-center justify-end gap-2 lg:mt-1">
-              <span className="rounded-full bg-sunken px-2 py-0.5 text-xs tabular-nums text-muted">
+              <span className="rounded-full bg-sunken px-2.5 py-1 text-xs tabular-nums text-muted">
                 {draft.length}/{MAX_INSTRUCTION}
               </span>
               <Button
-                variant="accent"
+                variant="primary"
                 size="sm"
                 aria-label="Enviar"
                 disabled={!draft.trim() || isBusy}
@@ -317,7 +320,7 @@ function UserMessage({
           />
         </div>
       )}
-      <p className="max-w-[85%] break-words rounded-xl bg-accent-soft px-3 py-2 text-sm">
+      <p className="max-w-[85%] break-words rounded-2xl rounded-br-md bg-accent-soft px-4 py-2.5 text-sm">
         {instruction}
       </p>
     </div>

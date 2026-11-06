@@ -24,7 +24,7 @@ export default function TrackingPage({ params }: { params: Promise<{ token: stri
           title="Link inválido"
           description="Peça um novo link com o e-mail usado na compra."
           action={
-            <Button asChild variant="accent">
+            <Button asChild variant="primary">
               <Link href="/acompanhar">Pedir novo link</Link>
             </Button>
           }

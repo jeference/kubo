@@ -1,3 +1,5 @@
+import { Card } from "@kubo/ui/card";
+import { Callout } from "@kubo/ui/callout";
 import type { Schemas } from "@kubo/api-client";
 import { formatBRL } from "@kubo/ui/lib/format";
 
@@ -21,7 +23,7 @@ export function OrderSummary({
   shipment: Shipment;
 }) {
   return (
-    <div className="space-y-4 rounded-2xl border border-line p-5">
+    <Card className="space-y-4 p-5">
       <h2 className="font-display text-lg font-semibold">Itens</h2>
       <ul className="space-y-3">
         {items.map((item) => (
@@ -30,7 +32,7 @@ export function OrderSummary({
             <img
               src={item.image_url}
               alt=""
-              className="size-16 rounded-lg bg-sunken object-contain"
+              className="size-16 rounded-xl bg-sunken object-contain"
             />
             <span className="min-w-0 flex-1 text-sm">
               {item.size_label}
@@ -58,10 +60,10 @@ export function OrderSummary({
         Prazo: até {deliveryDays} dias úteis depois do pagamento, com a produção.
       </p>
       {shipment?.tracking_code && (
-        <p className="rounded-xl bg-accent-soft p-3 text-sm">
+        <Callout tone="accent">
           {shipment.carrier}: rastreio <strong>{shipment.tracking_code}</strong>
-        </p>
+        </Callout>
       )}
-    </div>
+    </Card>
   );
 }

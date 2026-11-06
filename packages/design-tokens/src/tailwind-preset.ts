@@ -14,6 +14,10 @@ export const tailwindPreset: Partial<Config> = {
         ink: withAlpha("--ink"),
         muted: withAlpha("--muted"),
         line: withAlpha("--line"),
+        stroke: {
+          DEFAULT: withAlpha("--stroke"),
+          hover: withAlpha("--stroke-hover"),
+        },
         accent: {
           DEFAULT: withAlpha("--accent"),
           soft: withAlpha("--accent-soft"),

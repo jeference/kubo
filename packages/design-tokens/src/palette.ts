@@ -10,6 +10,9 @@ export const palette = {
   ink: "#141414",
   muted: "#6B6B6B",
   line: "#E5E5E5",
+  /** Contorno dos controles: botão secundário, chips, contador, campos. */
+  stroke: "#D6D6D6",
+  strokeHover: "#ABABAB",
   accent: "#7C3AED",
   accentSoft: "#F0E9FF",
   highlight: "#FAFF00",

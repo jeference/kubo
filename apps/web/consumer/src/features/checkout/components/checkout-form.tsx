@@ -5,13 +5,17 @@ import { track } from "@kubo/analytics";
 import { ApiError, type Schemas, unwrap } from "@kubo/api-client";
 import { qk, useApiClient } from "@kubo/api-client/react";
 import { Button } from "@kubo/ui/button";
+import { Callout } from "@kubo/ui/callout";
+import { Card } from "@kubo/ui/card";
+import { Checkbox } from "@kubo/ui/checkbox";
 import { EmptyState } from "@kubo/ui/empty-state";
 import { Form, TextField } from "@kubo/ui/form";
 import { formatBRL, formatCep, formatCpf, formatPhone } from "@kubo/ui/lib/format";
-import { cn } from "@kubo/ui/lib/utils";
+import { RadioCard } from "@kubo/ui/radio-card";
 import { Skeleton } from "@kubo/ui/skeleton";
 import { useSession } from "@kubo/web-core/session";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Lock } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -226,7 +230,7 @@ export function CheckoutForm() {
           title="Nada para finalizar"
           description="Seu carrinho está vazio, ou os itens não estão mais disponíveis."
           action={
-            <Button asChild variant="accent">
+            <Button asChild variant="primary">
               <Link href="/carrinho">Ver carrinho</Link>
             </Button>
           }
@@ -335,7 +339,7 @@ export function CheckoutForm() {
                   {quoteError}
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="secondary"
                     size="sm"
                     onClick={() => quoteMutate({ postalCode: cepDigits, itemIds })}
                   >
@@ -344,91 +348,72 @@ export function CheckoutForm() {
                 </div>
               )}
               {shippingNotice && (
-                <p className="rounded-xl bg-accent-soft p-3 text-sm" role="alert">
+                <Callout tone="accent" role="alert">
                   {shippingNotice}
-                </p>
+                </Callout>
               )}
               {!quote.isPending &&
                 quotes.map((option) => (
-                  <label
+                  <RadioCard
                     key={option.id}
-                    className={cn(
-                      "flex cursor-pointer items-center justify-between gap-3 rounded-xl border p-3 transition-colors",
-                      option.id === selectedQuoteId
-                        ? "border-accent bg-accent-soft/40"
-                        : "border-line hover:border-ink/30",
-                    )}
+                    name="shipping"
+                    checked={option.id === selectedQuoteId}
+                    onSelect={() => setSelectedQuoteId(option.id)}
+                    aside={formatBRL(option.price_cents)}
                   >
-                    <span className="flex items-center gap-3">
-                      <input
-                        type="radio"
-                        name="shipping"
-                        checked={option.id === selectedQuoteId}
-                        onChange={() => setSelectedQuoteId(option.id)}
-                        className="size-4 accent-[rgb(var(--accent))]"
-                      />
-                      <span>
-                        <span className="block text-sm font-medium">
-                          {option.company} {option.service_name}
-                        </span>
-                        <span className="block text-xs text-muted">
-                          Até {option.delivery_days} dias úteis, com a produção
-                        </span>
-                      </span>
+                    <span className="block text-sm font-semibold">
+                      {option.company} {option.service_name}
                     </span>
-                    <span className="text-sm font-medium tabular-nums">
-                      {formatBRL(option.price_cents)}
+                    <span className="block text-xs text-muted">
+                      Até {option.delivery_days} dias úteis, com a produção
                     </span>
-                  </label>
+                  </RadioCard>
                 ))}
             </fieldset>
           </div>
 
-          <aside className="h-fit space-y-4 rounded-2xl border border-line p-4 lg:sticky lg:top-6">
-            <h2 className="font-display text-lg font-semibold">Resumo</h2>
-            <ul className="space-y-3">
-              {items.map((item) => (
-                <li key={item.id} className="flex items-center gap-3">
-                  {/* eslint-disable-next-line @next/next/no-img-element -- imagem dinâmica */}
-                  <img
-                    src={item.image_url}
-                    alt=""
-                    className="size-14 rounded-lg bg-sunken object-contain"
-                  />
-                  <span className="min-w-0 flex-1 text-sm">
-                    {item.size_label}
-                    <span className="block text-muted">Quantidade: {item.quantity}</span>
-                  </span>
-                  <span className="text-sm tabular-nums">{formatBRL(item.line_total_cents)}</span>
-                </li>
-              ))}
-            </ul>
-            <dl className="space-y-1.5 border-t border-line pt-3 text-sm">
-              <div className="flex justify-between">
-                <dt className="text-muted">Subtotal</dt>
-                <dd className="tabular-nums">{formatBRL(subtotal)}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-muted">Frete</dt>
-                <dd className="tabular-nums">
-                  {selectedQuote ? formatBRL(selectedQuote.price_cents) : "—"}
-                </dd>
-              </div>
-              <div className="flex justify-between pt-1.5 text-lg font-semibold">
-                <dt>Total</dt>
-                <dd className="tabular-nums" data-testid="total">
-                  {formatBRL(subtotal + (selectedQuote?.price_cents ?? 0))}
-                </dd>
-              </div>
-            </dl>
-            <label className="flex items-start gap-2 text-[13px] leading-snug">
-              <input
-                type="checkbox"
+          <Card asChild className="h-fit space-y-4 p-5 lg:sticky lg:top-6">
+            <aside>
+              <h2 className="font-display text-lg font-semibold">Resumo</h2>
+              <ul className="space-y-3">
+                {items.map((item) => (
+                  <li key={item.id} className="flex items-center gap-3">
+                    {/* eslint-disable-next-line @next/next/no-img-element -- imagem dinâmica */}
+                    <img
+                      src={item.image_url}
+                      alt=""
+                      className="size-14 rounded-xl bg-sunken object-contain"
+                    />
+                    <span className="min-w-0 flex-1 text-sm">
+                      {item.size_label}
+                      <span className="block text-muted">Quantidade: {item.quantity}</span>
+                    </span>
+                    <span className="text-sm tabular-nums">{formatBRL(item.line_total_cents)}</span>
+                  </li>
+                ))}
+              </ul>
+              <dl className="space-y-1.5 border-t border-line pt-3 text-sm">
+                <div className="flex justify-between">
+                  <dt className="text-muted">Subtotal</dt>
+                  <dd className="tabular-nums">{formatBRL(subtotal)}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-muted">Frete</dt>
+                  <dd className="tabular-nums">
+                    {selectedQuote ? formatBRL(selectedQuote.price_cents) : "—"}
+                  </dd>
+                </div>
+                <div className="flex justify-between pt-1.5 text-lg font-semibold">
+                  <dt>Total</dt>
+                  <dd className="tabular-nums" data-testid="total">
+                    {formatBRL(subtotal + (selectedQuote?.price_cents ?? 0))}
+                  </dd>
+                </div>
+              </dl>
+              <Checkbox
                 checked={acceptTerms}
                 onChange={(event) => setAcceptTerms(event.target.checked)}
-                className="mt-0.5 size-4 accent-[rgb(var(--accent))]"
-              />
-              <span>
+              >
                 Li e aceito os{" "}
                 <Link href="/termos" target="_blank" className="underline">
                   Termos de Uso
@@ -438,19 +423,20 @@ export function CheckoutForm() {
                   Política de Trocas
                 </Link>
                 . Sei que a peça impressa pode ter diferenças de cor e detalhe em relação à prévia.
-              </span>
-            </label>
-            <Button
-              type="submit"
-              variant="accent"
-              size="lg"
-              className="w-full"
-              disabled={!canSubmit}
-              pending={placeOrder.isPending}
-            >
-              Pagar com PIX
-            </Button>
-          </aside>
+              </Checkbox>
+              <Button
+                type="submit"
+                variant="primary"
+                size="lg"
+                className="w-full"
+                disabled={!canSubmit}
+                pending={placeOrder.isPending}
+              >
+                <Lock aria-hidden />
+                Pagar com PIX
+              </Button>
+            </aside>
+          </Card>
         </form>
       </Form>
     </div>

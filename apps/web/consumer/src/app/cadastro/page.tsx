@@ -62,7 +62,7 @@ function RegisterForm() {
             autoComplete="new-password"
             hint="Use pelo menos 8 caracteres."
           />
-          <Button type="submit" variant="accent" className="w-full" pending={register.isPending}>
+          <Button type="submit" variant="primary" className="w-full" pending={register.isPending}>
             Criar conta
           </Button>
         </form>

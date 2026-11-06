@@ -31,7 +31,7 @@ export function CreationList() {
     <div className="mx-auto max-w-6xl">
       <div className="flex items-center justify-between gap-3">
         <h1 className="font-display text-3xl font-semibold tracking-tight">Minhas criações</h1>
-        <Button asChild variant="accent">
+        <Button asChild variant="primary">
           <Link href="/">
             <Plus />
             Nova
@@ -63,7 +63,7 @@ export function CreationList() {
             title="Nenhuma criação ainda"
             description="Descreva uma ideia ou envie uma foto para começar."
             action={
-              <Button asChild variant="accent">
+              <Button asChild variant="primary">
                 <Link href="/">Criar agora</Link>
               </Button>
             }
@@ -78,7 +78,7 @@ export function CreationList() {
             return (
               <li
                 key={creation.id}
-                className="group relative overflow-hidden rounded-2xl border border-line"
+                className="group relative overflow-hidden rounded-2xl border border-line bg-surface shadow-card transition-colors hover:border-accent"
               >
                 <Link href={`/criacoes/${creation.id}`} className="block">
                   <div className="flex aspect-square items-center justify-center bg-sunken">
@@ -99,14 +99,15 @@ export function CreationList() {
                     <p className="text-xs text-muted">{formatDate(creation.created_at)}</p>
                   </div>
                 </Link>
-                <button
-                  type="button"
+                <Button
+                  variant="floating"
+                  size="icon-sm"
                   aria-label="Excluir criação"
                   onClick={() => confirmDelete(creation.id)}
-                  className="absolute right-2 top-2 flex size-8 items-center justify-center rounded-full bg-surface/90 text-muted transition-colors hover:text-danger"
+                  className="absolute right-2 top-2 text-muted hover:text-danger"
                 >
-                  <Trash2 className="size-4" aria-hidden />
-                </button>
+                  <Trash2 aria-hidden />
+                </Button>
               </li>
             );
           })}

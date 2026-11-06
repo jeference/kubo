@@ -33,7 +33,7 @@ export function Studio({ id }: { id: string }) {
           title="Criação não encontrada"
           description="Ela pode ter sido excluída, ou foi feita em outro navegador. Entre na sua conta para ver as criações de outros dispositivos."
           action={
-            <Button asChild variant="accent">
+            <Button asChild variant="primary">
               <Link href="/">Criar algo novo</Link>
             </Button>
           }
@@ -73,7 +73,7 @@ function StudioContent({ creation }: { creation: Creation }) {
       <div className="grid gap-y-6 lg:grid-cols-[min(900px,42vw,max(400px,calc(100dvh-10rem)))_minmax(0,675px)] lg:justify-center lg:gap-x-[min(4vw,72px)]">
         {!isGeneratingImage && (
           <Button
-            variant="outline"
+            variant="secondary"
             size="icon"
             aria-label="Voltar e começar outra criação"
             className="-mb-3 justify-self-start lg:col-span-2"
@@ -86,15 +86,16 @@ function StudioContent({ creation }: { creation: Creation }) {
         <section className="relative mx-auto w-full min-w-0 max-w-[560px] lg:max-w-none">
           <Card className="relative aspect-square w-full overflow-hidden">
             {isReady && image && (
-              <button
-                type="button"
+              <Button
+                variant="floating"
+                size="sm"
                 aria-label="Editar imagem"
                 onClick={() => setIsEditing(true)}
-                className="absolute right-3 top-3 z-10 flex flex-col items-center gap-0.5 rounded-xl bg-surface/90 px-2.5 py-1.5 text-xs text-accent transition-colors hover:bg-accent-soft lg:px-3 lg:py-2"
+                className="absolute right-3 top-3 z-10 lg:right-4 lg:top-4 lg:h-10 lg:px-5 lg:text-sm"
               >
-                <Pencil className="size-4 lg:size-[22px]" aria-hidden />
+                <Pencil aria-hidden />
                 Editar
-              </button>
+              </Button>
             )}
 
             {isGeneratingImage && (
@@ -158,11 +159,11 @@ function FailureMessage({
       </p>
       <div className="flex flex-wrap justify-center gap-2">
         {refused ? (
-          <Button asChild variant="accent">
+          <Button asChild variant="primary">
             <Link href="/">Descrever de outro jeito</Link>
           </Button>
         ) : (
-          <Button variant="accent" onClick={onRetry} pending={isRetrying}>
+          <Button variant="primary" onClick={onRetry} pending={isRetrying}>
             <RotateCw />
             Tentar de novo
           </Button>

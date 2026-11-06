@@ -9,7 +9,7 @@ export default function NotFound() {
         title="Página não encontrada"
         description="O endereço pode estar errado, ou a página não existe mais."
         action={
-          <Button asChild variant="accent">
+          <Button asChild variant="primary">
             <Link href="/">Criar algo novo</Link>
           </Button>
         }

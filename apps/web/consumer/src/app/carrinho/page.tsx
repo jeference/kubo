@@ -1,10 +1,12 @@
 "use client";
 
 import { Button } from "@kubo/ui/button";
+import { Card } from "@kubo/ui/card";
 import { EmptyState } from "@kubo/ui/empty-state";
 import { formatBRL } from "@kubo/ui/lib/format";
+import { QuantityStepper } from "@kubo/ui/quantity-stepper";
 import { Skeleton } from "@kubo/ui/skeleton";
-import { Minus, Plus, Trash2 } from "lucide-react";
+import { Lock, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 
@@ -38,7 +40,7 @@ export default function CartPage() {
             title="Seu carrinho está vazio"
             description="Crie uma peça e adicione aqui."
             action={
-              <Button asChild variant="accent">
+              <Button asChild variant="primary">
                 <Link href="/">Criar agora</Link>
               </Button>
             }
@@ -48,68 +50,56 @@ export default function CartPage() {
         <>
           <ul className="mt-6 space-y-3">
             {cart.items.map((item) => (
-              <li key={item.id} className="flex gap-4 rounded-2xl border border-line p-3">
-                <Link href={`/criacoes/${item.creation_id}`} className="shrink-0">
-                  {/* eslint-disable-next-line @next/next/no-img-element -- imagem dinâmica */}
-                  <img
-                    src={item.image_url}
-                    alt=""
-                    className="size-24 rounded-xl bg-sunken object-contain"
-                  />
-                </Link>
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium">{item.size_label}</p>
-                  <p className="text-sm text-muted">{formatBRL(item.unit_price_cents)} cada</p>
-                  {item.unavailable_reason ? (
-                    <p className="mt-2 text-sm text-danger" role="alert">
-                      {item.unavailable_reason}
+              <Card asChild key={item.id} className="flex gap-4 p-3">
+                <li>
+                  <Link href={`/criacoes/${item.creation_id}`} className="shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element -- imagem dinâmica */}
+                    <img
+                      src={item.image_url}
+                      alt=""
+                      className="size-24 rounded-2xl bg-sunken object-contain"
+                    />
+                  </Link>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold">{item.size_label}</p>
+                    <p className="text-sm text-muted">{formatBRL(item.unit_price_cents)} cada</p>
+                    {item.unavailable_reason ? (
+                      <p className="mt-2 text-sm text-danger" role="alert">
+                        {item.unavailable_reason}
+                      </p>
+                    ) : (
+                      <QuantityStepper
+                        className="mt-2"
+                        size="sm"
+                        value={item.quantity}
+                        max={10}
+                        disabled={update.isPending}
+                        onChange={(quantity) =>
+                          update.mutate({ id: item.id, quantity }, { onError })
+                        }
+                      />
+                    )}
+                  </div>
+                  <div className="flex flex-col items-end justify-between">
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label="Remover do carrinho"
+                      onClick={() => remove.mutate(item.id, { onError })}
+                      className="hover:text-danger"
+                    >
+                      <Trash2 aria-hidden />
+                    </Button>
+                    <p className="font-semibold tabular-nums">
+                      {item.unavailable_reason ? "" : formatBRL(item.line_total_cents)}
                     </p>
-                  ) : (
-                    <div className="mt-2 inline-flex items-center border border-line">
-                      <button
-                        type="button"
-                        aria-label="Diminuir quantidade"
-                        disabled={item.quantity <= 1 || update.isPending}
-                        onClick={() =>
-                          update.mutate({ id: item.id, quantity: item.quantity - 1 }, { onError })
-                        }
-                        className="flex size-9 items-center justify-center hover:bg-sunken disabled:opacity-40"
-                      >
-                        <Minus className="size-4" />
-                      </button>
-                      <span className="w-8 text-center text-sm tabular-nums">{item.quantity}</span>
-                      <button
-                        type="button"
-                        aria-label="Aumentar quantidade"
-                        disabled={item.quantity >= 10 || update.isPending}
-                        onClick={() =>
-                          update.mutate({ id: item.id, quantity: item.quantity + 1 }, { onError })
-                        }
-                        className="flex size-9 items-center justify-center hover:bg-sunken disabled:opacity-40"
-                      >
-                        <Plus className="size-4" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-                <div className="flex flex-col items-end justify-between">
-                  <button
-                    type="button"
-                    aria-label="Remover do carrinho"
-                    onClick={() => remove.mutate(item.id, { onError })}
-                    className="flex size-8 items-center justify-center rounded-full text-muted hover:text-danger"
-                  >
-                    <Trash2 className="size-4" aria-hidden />
-                  </button>
-                  <p className="font-medium tabular-nums">
-                    {item.unavailable_reason ? "" : formatBRL(item.line_total_cents)}
-                  </p>
-                </div>
-              </li>
+                  </div>
+                </li>
+              </Card>
             ))}
           </ul>
 
-          <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-line p-4">
+          <Card className="mt-6 flex flex-wrap items-center justify-between gap-4 p-5">
             <div>
               <p className="text-sm text-muted">Subtotal</p>
               <p className="text-2xl font-semibold tabular-nums">
@@ -117,10 +107,20 @@ export default function CartPage() {
               </p>
               <p className="text-xs text-muted">Frete calculado na finalização</p>
             </div>
-            <Button asChild={hasAvailable} variant="accent" size="lg" disabled={!hasAvailable}>
-              {hasAvailable ? <Link href="/checkout">Finalizar compra</Link> : "Finalizar compra"}
+            <Button asChild={hasAvailable} variant="primary" size="lg" disabled={!hasAvailable}>
+              {hasAvailable ? (
+                <Link href="/checkout">
+                  <Lock aria-hidden />
+                  Finalizar compra
+                </Link>
+              ) : (
+                <>
+                  <Lock aria-hidden />
+                  Finalizar compra
+                </>
+              )}
             </Button>
-          </div>
+          </Card>
         </>
       )}
     </div>

@@ -1,6 +1,8 @@
 "use client";
 
 import { ApiError } from "@kubo/api-client";
+import { Callout } from "@kubo/ui/callout";
+import { Card } from "@kubo/ui/card";
 import { Button } from "@kubo/ui/button";
 import { EmptyState } from "@kubo/ui/empty-state";
 import { formatDate } from "@kubo/ui/lib/format";
@@ -41,7 +43,7 @@ export function OrderDetail({ id }: { id: string }) {
           title="Pedido não encontrado"
           description="Use o link enviado ao seu e-mail, ou entre na sua conta."
           action={
-            <Button asChild variant="accent">
+            <Button asChild variant="primary">
               <Link href="/acompanhar">Acompanhar pedido</Link>
             </Button>
           }
@@ -74,10 +76,10 @@ export function OrderDetail({ id }: { id: string }) {
       </div>
 
       {order.status === "paid" && (
-        <p className="rounded-2xl bg-accent-soft p-4" role="status">
+        <Callout tone="accent" role="status" className="p-4 text-base">
           <strong>Recebemos seu pagamento!</strong> Enviamos o link de acompanhamento para{" "}
           {order.customer_email}.
-        </p>
+        </Callout>
       )}
 
       {order.status === "pending_payment" && order.charge?.status === "pending" && (
@@ -85,10 +87,10 @@ export function OrderDetail({ id }: { id: string }) {
       )}
       {needsCharge && !pay.isError && <Skeleton className="h-72 w-full" />}
       {needsCharge && pay.isError && (
-        <div className="space-y-3 rounded-2xl border border-line p-5 text-center" role="alert">
+        <Card className="space-y-3 p-5 text-center" role="alert">
           <p>Não conseguimos gerar o PIX agora.</p>
           <Button
-            variant="accent"
+            variant="primary"
             pending={pay.isPending}
             onClick={() =>
               pay.mutate(undefined, { onError: (error) => toast.error(messageOf(error)) })
@@ -96,16 +98,16 @@ export function OrderDetail({ id }: { id: string }) {
           >
             Tentar de novo
           </Button>
-        </div>
+        </Card>
       )}
 
       {order.status === "expired" && (
-        <div className="space-y-3 rounded-2xl border border-line p-5" role="alert">
-          <p className="font-medium">O prazo do PIX terminou</p>
+        <Card className="space-y-3 p-5" role="alert">
+          <p className="font-semibold">O prazo do PIX terminou</p>
           <p className="text-sm text-muted">Nada foi cobrado. Seus itens continuam no carrinho.</p>
           {order.can_renew_payment ? (
             <Button
-              variant="accent"
+              variant="primary"
               pending={pay.isPending}
               onClick={() =>
                 pay.mutate(undefined, {
@@ -121,17 +123,17 @@ export function OrderDetail({ id }: { id: string }) {
               Gerar novo PIX
             </Button>
           ) : (
-            <Button asChild variant="accent">
+            <Button asChild variant="primary">
               <Link href="/carrinho">Voltar ao carrinho</Link>
             </Button>
           )}
-        </div>
+        </Card>
       )}
 
       {order.status === "refunded" && (
-        <p className="rounded-2xl border border-line p-4" role="status">
+        <Callout role="status" className="p-4 text-base text-ink">
           Este pedido foi reembolsado. O valor volta para a conta usada no PIX.
-        </p>
+        </Callout>
       )}
 
       {isPaidOrLater && <OrderTimeline status={order.status} />}
@@ -146,7 +148,7 @@ export function OrderDetail({ id }: { id: string }) {
         shipment={order.shipment}
       />
 
-      <div className="rounded-2xl border border-line p-5 text-sm">
+      <Card className="p-5 text-sm">
         <h2 className="font-display text-lg font-semibold">Entrega</h2>
         <p className="mt-2">{order.customer_name}</p>
         <p className="text-muted">
@@ -158,7 +160,7 @@ export function OrderDetail({ id }: { id: string }) {
           CEP {order.postal_code.slice(0, 5)}-{order.postal_code.slice(5)}
         </p>
         <p className="mt-2 text-muted">CPF {order.cpf_masked}</p>
-      </div>
+      </Card>
     </div>
   );
 }

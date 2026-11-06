@@ -61,7 +61,7 @@ function VerifyForm() {
             maxLength={6}
             autoFocus
           />
-          <Button type="submit" variant="accent" className="w-full" pending={verify.isPending}>
+          <Button type="submit" variant="primary" className="w-full" pending={verify.isPending}>
             Confirmar
           </Button>
         </form>
