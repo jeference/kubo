@@ -97,6 +97,25 @@ class AbacatePayAdapter(PaymentGatewayPort):
             expires_at=parse_datetime(data.get("expiresAt") or ""),
         )
 
+    def simulate_payment(self, *, external_id: str) -> dict:
+        """Só desenvolvimento: faz o AbacatePay pagar a cobrança e disparar o webhook.
+
+        Fica fora do port porque é ferramenta de dev, própria do AbacatePay. Só funciona com
+        chave de devMode; em produção a API recusa.
+        """
+        try:
+            response = requests.post(
+                f"{self._base_url}/transparents/simulate-payment",
+                params={"id": external_id},
+                json={"metadata": {}},
+                headers=self._headers(),
+                timeout=_TIMEOUT_SECONDS,
+            )
+        except requests.RequestException as exc:
+            log.error("abacatepay_simulate_exception", error=str(exc))
+            raise UpstreamUnavailable("Gateway de pagamento indisponível.") from exc
+        return self._data_or_raise(response, "simulate_transparent_payment")
+
     def get_charge_status(self, *, external_id: str) -> str:
         try:
             response = requests.get(

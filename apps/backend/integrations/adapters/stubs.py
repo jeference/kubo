@@ -88,7 +88,7 @@ def _stub_key(external_id: str) -> str:
 
 
 def stub_set_charge_status(external_id: str, status: str) -> None:
-    """Usado por `simulate_pix_payment` e pelos testes."""
+    """Usado pelos testes."""
     cache.set(_stub_key(external_id), status, timeout=7 * 24 * 3600)
 
 
