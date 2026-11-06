@@ -5,13 +5,14 @@ from datetime import timedelta
 from django.utils import timezone
 
 from common.alerts import alert
+from conftest import creation_payload
 from creations import worker
 from creations.models import Creation, ProviderTask
 from integrations import ports
 
 
 def _create(client, text="um gato"):
-    return client.post("/api/creations/", {"text": text, "style": "free"}, format="multipart")
+    return client.post("/api/creations/", creation_payload(text), format="multipart")
 
 
 def test_claim_skips_locked_and_future_tasks(visitor_client):

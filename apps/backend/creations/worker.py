@@ -105,14 +105,11 @@ def _run_image(task: ProviderTask) -> None:
 
     size = settings.BUSINESS["IMAGE_SIZE"]
     creation = task.creation
-    if task.kind == ProviderTask.Kind.TEXT_TO_IMAGE:
-        result = port.generate(prompt=task.rendered_prompt, size=size)
+    if task.kind == ProviderTask.Kind.PHOTO_TO_IMAGE:
+        source_asset = creation.input.photo
     else:
-        if task.kind == ProviderTask.Kind.PHOTO_TO_IMAGE:
-            source_asset = creation.input.photo
-        else:
-            source_asset = task.source_version.asset
-        result = port.edit(image=media.read(source_asset), prompt=task.rendered_prompt, size=size)
+        source_asset = task.source_version.asset
+    result = port.edit(image=media.read(source_asset), prompt=task.rendered_prompt, size=size)
 
     _record_cost(task, result.cost_usd)
     if _is_cancelled(task):
@@ -124,7 +121,6 @@ def _run_image(task: ProviderTask) -> None:
     plain = plain_background(result.data)
     source_plain = task.source_version.has_plain_background if task.source_version else True
     origin = {
-        ProviderTask.Kind.TEXT_TO_IMAGE: ImageVersion.Origin.TEXT,
         ProviderTask.Kind.PHOTO_TO_IMAGE: ImageVersion.Origin.PHOTO,
         ProviderTask.Kind.IMAGE_EDIT: ImageVersion.Origin.EDIT,
     }[task.kind]

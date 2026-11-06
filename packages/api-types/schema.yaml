@@ -1116,11 +1116,11 @@ components:
         photo:
           type: string
           format: binary
-          nullable: true
         rights_accepted:
           type: boolean
           default: false
       required:
+      - photo
       - style
     CreationDetail:
       type: object
@@ -1138,9 +1138,6 @@ components:
           readOnly: true
         text:
           type: string
-          readOnly: true
-        has_photo:
-          type: boolean
           readOnly: true
         active_started_at:
           type: string
@@ -1182,7 +1179,6 @@ components:
       - current_version_id
       - edit_tasks
       - error
-      - has_photo
       - id
       - is_generating
       - status
@@ -1709,12 +1705,10 @@ components:
       - total_cents
     OriginEnum:
       enum:
-      - text
       - photo
       - edit
       type: string
       description: |-
-        * `text` - Texto
         * `photo` - Foto
         * `edit` - Edição
     PaginatedCreationListList:
@@ -1891,12 +1885,10 @@ components:
       - status
     ProviderTaskKindEnum:
       enum:
-      - text_to_image
       - photo_to_image
       - image_edit
       type: string
       description: |-
-        * `text_to_image` - Texto para imagem
         * `photo_to_image` - Foto para imagem
         * `image_edit` - Edição de imagem
     ProviderTaskStatusEnum:

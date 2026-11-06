@@ -54,13 +54,12 @@ class CreationListView(ListAPIView):
         data.is_valid(raise_exception=True)
         actor, ip_hash = _context(request)
         values = data.validated_data
-        photo = values.get("photo")
         creation = services.start_creation(
             actor=actor,
             ip_hash=ip_hash,
             text=values.get("text", ""),
             style=values["style"],
-            photo_bytes=photo.read() if photo else None,
+            photo_bytes=values["photo"].read(),
             rights_accepted=values["rights_accepted"],
             request_id=request_id_of(request),
         )

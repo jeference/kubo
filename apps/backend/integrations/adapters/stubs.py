@@ -79,11 +79,6 @@ class StubImageGenerationAdapter(ImageGenerationPort):
     provider = "stub"
     model_name = "stub-image"
 
-    def generate(self, *, prompt: str, size: int) -> GeneratedImage:
-        _delay("STUB_IMAGE_SECONDS", 1)
-        _check_triggers(prompt)
-        return GeneratedImage(data=_figurine(size), cost_usd=0.0)
-
     def edit(self, *, image: bytes, prompt: str, size: int) -> GeneratedImage:
         _delay("STUB_IMAGE_SECONDS", 1)
         _check_triggers(prompt)

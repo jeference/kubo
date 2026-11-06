@@ -60,7 +60,7 @@ function useCreationSetter() {
 export interface StartCreationInput {
   text: string;
   style: string;
-  photo: File | null;
+  photo: File;
   rightsAccepted: boolean;
 }
 
@@ -72,10 +72,8 @@ export function useStartCreation() {
       const form = new FormData();
       form.set("text", input.text);
       form.set("style", input.style);
-      if (input.photo) {
-        form.set("photo", input.photo);
-        form.set("rights_accepted", String(input.rightsAccepted));
-      }
+      form.set("photo", input.photo);
+      form.set("rights_accepted", String(input.rightsAccepted));
       return unwrap(
         await api.POST("/api/creations/", {
           body: form as never,
@@ -85,7 +83,7 @@ export function useStartCreation() {
     },
     onSuccess: (creation) => {
       setCreation(creation);
-      track("prompt_submitted", { style: creation.style, photo: creation.has_photo ? 1 : 0 });
+      track("prompt_submitted", { style: creation.style });
     },
   });
 }

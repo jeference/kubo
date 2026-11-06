@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from catalog.models import ProductSize
-from conftest import drain_worker, make_ready_creation
+from conftest import creation_payload, drain_worker, make_ready_creation
 from orders.tests.helpers import add_to_cart
 
 
 def test_add_requires_ready_creation(visitor_client):
     creation = visitor_client.post(
-        "/api/creations/", {"text": "a", "style": "free"}, format="multipart"
+        "/api/creations/", creation_payload("a"), format="multipart"
     ).data
     size = visitor_client.get("/api/catalog/sizes/").data[0]
     response = visitor_client.post(

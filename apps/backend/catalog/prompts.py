@@ -134,23 +134,11 @@ GENERATION = {
         _COLOR_RULE
         + "{instruction}. Keep everything else exactly the same, on a plain white background"
     ),
-    # One entry per style the user can pick. PROMPT_TEMPLATE wraps a text description
-    # ({prompt}, {prompt_lower}). STANDARDIZE_PROMPT_TEMPLATE turns an uploaded photo into an
-    # image of that style; the REQUEST variant is for a photo plus a change ({request}).
+    # One entry per style the user can pick. Every creation starts from the customer's photo:
+    # STANDARDIZE_PROMPT_TEMPLATE turns it into an image of that style; the REQUEST variant is
+    # for a photo plus a change ({request}).
     "STYLES": {
         "free": {
-            # Matches the 2D references of Jujubit/Tripo. Not retuned for GPT Image 2:
-            # tuned on FLUX.2 [klein], the previous image model,
-            # against 18 of their images (2026-10-31): a sculpted figurine look (fur and hair
-            # as solid shapes, not strands), the whole object centered, and a
-            # near-white background (#FDFDFD; theirs is #FCFCFC). FLUX.2 [klein] overreacts to
-            # color words: "vivid"/"bright" turn objects rainbow, "natural" goes sepia,
-            # "pristine" drains color; "studio lighting" adds a gray vignette.
-            "PROMPT_TEMPLATE": (
-                _COLOR_RULE
-                + "{prompt}, as a detailed 3D figurine, shown whole, centered and filling "
-                "the frame, isolated on a plain white background" + _COLOR_PLAN
-            ),
             # Tuned for GPT Image 2 against Jujubit's Free Style on 16 photos (2026-11-01).
             # "Whatever is underneath" is what stops it copying pedestals and piers; a broader
             # base rule put a disc under cars and chairs.
@@ -169,14 +157,6 @@ GENERATION = {
             ),
         },
         "pixar": {
-            "PROMPT_TEMPLATE": (
-                f"{_COLOR_RULE}{{prompt}}, as a 3D model from a modern animated family movie: "
-                f"{_PIXAR_LOOK} A person or character has a head only slightly larger than "
-                "realistic, large expressive eyes, and is shown full body, standing with the "
-                f"arms relaxed at the sides unless described otherwise. {_PIXAR_ANIMAL} "
-                f"{_PIXAR_OBJECT} Whole subject alone, {_STYLE_FRAME} with no scene, "
-                f"{_STYLE_BACKDROP}"
-            ),
             "STANDARDIZE_PROMPT_TEMPLATE": (
                 f"{_COLOR_RULE}Turn the main subject of this reference image into a 3D model "
                 f"from a modern animated family movie: {_PIXAR_LOOK} Keep it recognizably the "
@@ -200,12 +180,6 @@ GENERATION = {
             ),
         },
         "mini-pop": {
-            "PROMPT_TEMPLATE": (
-                f"{_COLOR_RULE}{{prompt}}, as a collectible vinyl bobble-head toy figure: "
-                f"{_MINI_POP_LOOK} An animal stands upright in simple clothes. "
-                f"{_MINI_POP_OBJECT} Two people stay two people, side by side. Front view, "
-                f"standing, shown whole, {_STYLE_FRAME} {_STYLE_BACKDROP}"
-            ),
             "STANDARDIZE_PROMPT_TEMPLATE": (
                 f"{_COLOR_RULE}Turn the main subject of this reference image into a collectible "
                 f"vinyl bobble-head toy figure: {_MINI_POP_LOOK} Keep it recognizably the same: "
@@ -226,15 +200,6 @@ GENERATION = {
             ),
         },
         "chibi": {
-            "PROMPT_TEMPLATE": (
-                f"{_COLOR_RULE}{{prompt}}, as a Japanese chibi anime collectible figure: "
-                f"{_CHIBI_LOOK} The figure is always a stylized humanoid anime character. An "
-                "animal becomes a humanoid character with that animal's ears, tail and "
-                "coloring, wearing clothes. An object, vehicle or building becomes a character "
-                "holding a small clearly recognizable model of it, with hair and outfit in its "
-                "colors. Two people stay two people, side by side. Requested words appear large "
-                f"on the outfit. Standing, shown whole, {_STYLE_FRAME} {_STYLE_BACKDROP}"
-            ),
             "STANDARDIZE_PROMPT_TEMPLATE": (
                 f"{_COLOR_RULE}Turn the main subject of this reference image into a Japanese "
                 f"chibi anime collectible figure: {_CHIBI_LOOK} Keep it recognizably the same: "
@@ -270,13 +235,6 @@ def public_styles() -> list[dict]:
         {"id": style, "label": _LABELS[style], "thumbnail": f"/styles/{style}.webp"}
         for style in STYLE_IDS
     ]
-
-
-def text_prompt(*, style: str, text: str) -> str:
-    subject = text.strip().rstrip(".")
-    return GENERATION["STYLES"][style]["PROMPT_TEMPLATE"].format(
-        prompt=subject, prompt_lower=subject[:1].lower() + subject[1:]
-    )
 
 
 def photo_prompt(*, style: str, request: str = "") -> str:

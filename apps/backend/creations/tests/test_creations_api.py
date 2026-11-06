@@ -1,27 +1,15 @@
 from __future__ import annotations
 
-import io
-
-from PIL import Image
-
-from conftest import drain_worker, make_ready_creation
+from conftest import creation_payload, drain_worker, make_ready_creation
 from creations.models import Creation, ProviderTask, QuotaReservation
 
 
-def _photo():
-    buffer = io.BytesIO()
-    Image.new("RGB", (64, 64), "white").save(buffer, format="PNG")
-    buffer.seek(0)
-    buffer.name = "foto.png"
-    return buffer
-
-
 def _create(client, **fields):
-    payload = {"text": "um gato", "style": "free", **fields}
+    payload = creation_payload(**{"text": "um gato", **fields})
     return client.post("/api/creations/", payload, format="multipart")
 
 
-def test_create_from_text_is_ready_to_buy(visitor_client):
+def test_create_from_photo_and_request_is_ready_to_buy(visitor_client):
     response = _create(visitor_client)
     assert response.status_code == 202
     assert response.data["status"] == "generating_image"
@@ -34,16 +22,17 @@ def test_create_from_text_is_ready_to_buy(visitor_client):
     assert detail["versions"][0]["image_url"]
     assert detail["current_version_id"] == detail["versions"][0]["id"]
     task = ProviderTask.objects.get(creation__globalid=response.data["id"])
-    assert task.rendered_prompt and task.prompt_version
+    assert task.kind == ProviderTask.Kind.PHOTO_TO_IMAGE
+    assert "um gato" in task.rendered_prompt and task.prompt_version
     assert task.status == ProviderTask.Status.SUCCEEDED
 
 
-def test_create_requires_text_or_photo(visitor_client):
+def test_create_requires_photo(visitor_client):
     response = visitor_client.post(
-        "/api/creations/", {"text": " ", "style": "free"}, format="multipart"
+        "/api/creations/", {"text": "um gato", "style": "free"}, format="multipart"
     )
-    assert response.status_code == 422
-    assert response.data["code"] == "empty_input"
+    assert response.status_code == 400
+    assert not ProviderTask.objects.exists()
 
 
 def test_invalid_style(visitor_client):
@@ -52,15 +41,14 @@ def test_invalid_style(visitor_client):
 
 
 def test_photo_requires_rights_declaration(visitor_client):
-    response = _create(visitor_client, photo=_photo())
+    response = _create(visitor_client, rights_accepted=False)
     assert response.status_code == 422
     assert response.data["code"] == "rights_required"
 
 
-def test_photo_flow(visitor_client):
-    response = _create(visitor_client, photo=_photo(), rights_accepted=True, text="")
+def test_photo_without_request(visitor_client):
+    response = _create(visitor_client, text="")
     assert response.status_code == 202, response.data
-    assert response.data["has_photo"] is True
     drain_worker()
     detail = visitor_client.get(f"/api/creations/{response.data['id']}/").data
     assert detail["status"] == "ready"

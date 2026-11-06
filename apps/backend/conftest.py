@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import io
+
 import pytest
 from django.core.cache import cache
+from PIL import Image
 from rest_framework.test import APIClient
 
 from integrations.adapters import email_console
@@ -90,9 +93,28 @@ def drain_worker(max_rounds: int = 20) -> None:
             return
 
 
+def photo_upload():
+    buffer = io.BytesIO()
+    Image.new("RGB", (64, 64), "white").save(buffer, format="PNG")
+    buffer.seek(0)
+    buffer.name = "foto.png"
+    return buffer
+
+
+def creation_payload(text="um dragão azul", **fields):
+    """Corpo de `POST /api/creations/`: foto com direitos aceitos e o pedido de alteração."""
+    return {
+        "text": text,
+        "style": "free",
+        "photo": photo_upload(),
+        "rights_accepted": True,
+        **fields,
+    }
+
+
 def make_ready_creation(client, text="um dragão azul"):
     """Criação pronta para comprar, passando pela API e pelo worker."""
-    response = client.post("/api/creations/", {"text": text, "style": "free"}, format="multipart")
+    response = client.post("/api/creations/", creation_payload(text), format="multipart")
     assert response.status_code == 202, response.data
     creation_id = response.data["id"]
     drain_worker()

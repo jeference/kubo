@@ -2,8 +2,8 @@ import { PromptStep } from "@/features/creations/components/prompt-step";
 
 const STEPS = [
   {
-    title: "Descreva ou envie uma foto",
-    text: "Conte o que você imagina, escolha um estilo, e a IA cria a imagem em segundos.",
+    title: "Envie uma foto",
+    text: "Escolha uma foto e um estilo, e a IA cria a imagem em segundos. Se quiser, peça uma mudança.",
   },
   {
     title: "Ajuste até ficar do seu jeito",

@@ -31,7 +31,6 @@ def test_price_table(anon):
 
 def test_prompts_render_every_style():
     for style in prompts.STYLE_IDS:
-        assert "dragão" in prompts.text_prompt(style=style, text="Um dragão.")
         assert prompts.photo_prompt(style=style)
         assert "sem chapéu" in prompts.photo_prompt(style=style, request="sem chapéu")
     assert "capa vermelha" in prompts.edit_prompt(instruction="capa vermelha.")

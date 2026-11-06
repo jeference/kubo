@@ -37,10 +37,10 @@ export function PromptStep() {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const trimmed = prompt.trim();
-  const canSubmit = (Boolean(trimmed) || Boolean(photo)) && (!photo || rightsAccepted);
+  const canSubmit = photo !== null && rightsAccepted;
 
   function submit() {
-    if (!canSubmit || start.isPending) return;
+    if (!photo || !canSubmit || start.isPending) return;
     start.mutate(
       { text: trimmed, style: styleId, photo, rightsAccepted },
       {
@@ -126,11 +126,7 @@ export function PromptStep() {
             maxLength={1000}
             autoFocus
             aria-label="O que você quer criar?"
-            placeholder={
-              photo
-                ? "Opcional: peça uma mudança, como “com um chapéu de mago”"
-                : "Ex.: um gato astronauta sentado na lua"
-            }
+            placeholder="Opcional: peça uma mudança, como “com um chapéu de mago”"
             className="p-4 lg:text-base"
           />
 

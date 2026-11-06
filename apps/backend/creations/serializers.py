@@ -84,7 +84,6 @@ class CreationListSerializer(GlobalIdSerializer):
 
 class CreationDetailSerializer(GlobalIdSerializer):
     text = serializers.CharField(source="input.text", read_only=True)
-    has_photo = serializers.SerializerMethodField()
     current_version_id = serializers.UUIDField(
         source="current_version.globalid", allow_null=True, read_only=True
     )
@@ -101,7 +100,6 @@ class CreationDetailSerializer(GlobalIdSerializer):
             "status",
             "style",
             "text",
-            "has_photo",
             "active_started_at",
             "current_version_id",
             "versions",
@@ -111,9 +109,6 @@ class CreationDetailSerializer(GlobalIdSerializer):
             "created_at",
         ]
         read_only_fields = fields
-
-    def get_has_photo(self, creation) -> bool:
-        return creation.input.photo_id is not None
 
     @extend_schema_field(ProviderTaskSerializer(many=True))
     def get_edit_tasks(self, creation):
@@ -147,7 +142,7 @@ class CreationDetailSerializer(GlobalIdSerializer):
 class CreationCreateSerializer(serializers.Serializer):
     text = serializers.CharField(required=False, allow_blank=True, max_length=1000)
     style = serializers.CharField(max_length=24)
-    photo = serializers.ImageField(required=False, allow_null=True)
+    photo = serializers.ImageField()
     rights_accepted = serializers.BooleanField(required=False, default=False)
 
 

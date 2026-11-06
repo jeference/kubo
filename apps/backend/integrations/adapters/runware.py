@@ -110,9 +110,6 @@ class RunwareImageGenerationAdapter(ImageGenerationPort):
             raise ProviderPermanentError("Runware não devolveu a imagem.")
         return GeneratedImage(data=_from_data_uri(item["imageDataURI"]), cost_usd=item.get("cost"))
 
-    def generate(self, *, prompt: str, size: int) -> GeneratedImage:
-        return self._result(_run(self._task(prompt=prompt, size=size), "generate_image"))
-
     def edit(self, *, image: bytes, prompt: str, size: int) -> GeneratedImage:
         task = self._task(prompt=prompt, size=size)
         task["inputs"] = {"referenceImages": [_to_data_uri(image)]}

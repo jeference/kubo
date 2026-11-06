@@ -683,7 +683,7 @@ export interface components {
             text?: string;
             style: string;
             /** Format: binary */
-            photo?: string | null;
+            photo: string;
             /** @default false */
             rights_accepted: boolean;
         };
@@ -693,7 +693,6 @@ export interface components {
             readonly status: components["schemas"]["CreationStatusEnum"];
             readonly style: string;
             readonly text: string;
-            readonly has_photo: boolean;
             /**
              * Format: date-time
              * @description Início da etapa em andamento: o tempo na tela sobrevive a recarregar a página.
@@ -884,12 +883,11 @@ export interface components {
             readonly created_at: string;
         };
         /**
-         * @description * `text` - Texto
-         *     * `photo` - Foto
+         * @description * `photo` - Foto
          *     * `edit` - Edição
          * @enum {string}
          */
-        OriginEnum: "text" | "photo" | "edit";
+        OriginEnum: "photo" | "edit";
         PaginatedCreationListList: {
             /** @example 123 */
             count: number;
@@ -962,12 +960,11 @@ export interface components {
             readonly finished_at: string | null;
         };
         /**
-         * @description * `text_to_image` - Texto para imagem
-         *     * `photo_to_image` - Foto para imagem
+         * @description * `photo_to_image` - Foto para imagem
          *     * `image_edit` - Edição de imagem
          * @enum {string}
          */
-        ProviderTaskKindEnum: "text_to_image" | "photo_to_image" | "image_edit";
+        ProviderTaskKindEnum: "photo_to_image" | "image_edit";
         /**
          * @description * `queued` - Na fila
          *     * `running` - Em execução

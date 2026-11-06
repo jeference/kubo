@@ -210,7 +210,7 @@ Todo modelo herda `BaseModel` (`id` interno, `globalid` UUID, `created_at`, `upd
 | Entidade | Campos principais | Uso |
 |---|---|---|
 | `Creation` | user **ou** visitor, status, estilo, versão atual, excluída em | ● |
-| `CreationInput` | creation, texto do cliente, foto (`Asset`), aceite dos direitos com data e IP | ● |
+| `CreationInput` | creation, pedido de alteração do cliente, foto (`Asset`, obrigatória), aceite dos direitos com data e IP | ● |
 | `ImageVersion` | creation, parent (árvore de versões), origem (`text`, `photo`, `edit`), instrução, asset, tarefa | ● |
 | `ProviderTask` | creation, tipo, provedor, modelo, status, tentativas, próxima tentativa, prompt renderizado, versão do prompt, parâmetros, custo em USD, início e fim, erro, trava (`locked_until`) | ● |
 | `QuotaReservation` | ator, hash do IP, tipo, dia, estado (`reserved`, `consumed`, `released`), tarefa | ● |
@@ -387,7 +387,7 @@ Os ports ficam em `integrations/ports/`, e cada adapter é escolhido por um cami
 
 | Port | Operações | Adapter do MVP | Stub |
 |---|---|---|---|
-| `ImageGenerationPort` | gerar de texto, gerar de foto, editar | Runware (`openai:gpt-image@2`) | Sim |
+| `ImageGenerationPort` | gerar de foto, editar | Runware (`openai:gpt-image@2`) | Sim |
 | `PaymentGatewayPort` | criar cobrança, consultar; reembolsar com o app de parceiros | AbacatePay | Sim |
 | `ShippingPort` | cotar | Melhor Envio | Sim |
 | `MediaStoragePort` | URL de upload, URL de download, gravar, apagar | S3 | Disco local |
@@ -601,7 +601,7 @@ Valores vêm do protótipo: `accent #7C3AED`, `accent-soft #F0E9FF`, `highlight 
 | `GET /api/me/addresses/` | Conta | Endereços salvos, para o checkout |
 | `GET /api/quota/` | Ator | Cota restante |
 | `GET /api/catalog/styles/`, `GET /api/catalog/sizes/` | Público | Estilos e tamanhos |
-| `GET, POST /api/creations/` | Ator | Listar e criar (texto, foto ou ambos) |
+| `GET, POST /api/creations/` | Ator | Listar e criar (foto obrigatória, pedido de alteração opcional) |
 | `GET, DELETE /api/creations/{id}/` | Dono | Detalhe (status, versões, edições) e exclusão |
 | `POST /api/creations/{id}/retry/` | Dono | Tentar de novo |
 | `POST /api/creations/{id}/edits/` | Dono | Pedir edição a partir de uma versão |

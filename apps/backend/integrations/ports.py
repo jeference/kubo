@@ -40,11 +40,8 @@ class ImageGenerationPort(ABC):
     model_name = ""
 
     @abstractmethod
-    def generate(self, *, prompt: str, size: int) -> GeneratedImage: ...
-
-    @abstractmethod
     def edit(self, *, image: bytes, prompt: str, size: int) -> GeneratedImage:
-        """Imagem de referência + instrução. Também transforma a foto do cliente."""
+        """Imagem de referência + instrução: transforma a foto do cliente e edita versões."""
 
 
 # --- Pagamento ---

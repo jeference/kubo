@@ -15,9 +15,12 @@ def test_deleted_creation_without_order_is_purged_after_period(visitor_client):
     detail = make_ready_creation(visitor_client)
     creation = Creation.objects.get(globalid=detail["id"])
     Creation.objects.filter(pk=creation.pk).update(deleted_at=timezone.now() - timedelta(days=31))
-    assert purge_expired_assets()["generated"] == 1
+    # A imagem gerada e a foto enviada.
+    assert purge_expired_assets()["generated"] == 2
     creation.current_version.asset.refresh_from_db()
+    creation.input.photo.refresh_from_db()
     assert creation.current_version.asset.purged_at is not None
+    assert creation.input.photo.purged_at is not None
 
 
 def test_assets_on_orders_are_never_purged(visitor_client):

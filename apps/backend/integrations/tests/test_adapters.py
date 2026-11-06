@@ -40,12 +40,12 @@ def _keys(settings):
 
 
 @responses.activate
-def test_runware_generate_returns_bytes_and_cost(_keys):
+def test_runware_edit_returns_bytes_and_cost(_keys):
     responses.post(
         RUNWARE,
         json={"data": [{"imageDataURI": f"data:image/png;base64,{PNG}", "cost": 0.015}]},
     )
-    result = RunwareImageGenerationAdapter().generate(prompt="um gato", size=1024)
+    result = RunwareImageGenerationAdapter().edit(image=b"foto", prompt="um gato", size=1024)
     assert result.data == b"imagem"
     assert result.cost_usd == 0.015
     body = json.loads(responses.calls[0].request.body)[0]
@@ -69,7 +69,7 @@ def test_runware_refusal_becomes_content_refused(_keys):
         json={"data": [], "errors": [{"code": "x", "message": "Rejected by the safety system"}]},
     )
     with pytest.raises(ContentRefused):
-        RunwareImageGenerationAdapter().generate(prompt="x", size=1024)
+        RunwareImageGenerationAdapter().edit(image=b"foto", prompt="x", size=1024)
 
 
 @responses.activate
@@ -78,24 +78,24 @@ def test_runware_other_error_is_permanent(_keys):
         RUNWARE, json={"data": [], "errors": [{"code": "x", "message": "Invalid model"}]}
     )
     with pytest.raises(ProviderPermanentError):
-        RunwareImageGenerationAdapter().generate(prompt="x", size=1024)
+        RunwareImageGenerationAdapter().edit(image=b"foto", prompt="x", size=1024)
 
 
 @responses.activate
 def test_runware_network_and_5xx_are_temporary(_keys):
     responses.post(RUNWARE, body=requests.ConnectionError("fora"))
     with pytest.raises(ProviderTemporaryError):
-        RunwareImageGenerationAdapter().generate(prompt="x", size=1024)
+        RunwareImageGenerationAdapter().edit(image=b"foto", prompt="x", size=1024)
     responses.replace(responses.POST, RUNWARE, json={"data": []}, status=503)
     with pytest.raises(ProviderTemporaryError):
-        RunwareImageGenerationAdapter().generate(prompt="x", size=1024)
+        RunwareImageGenerationAdapter().edit(image=b"foto", prompt="x", size=1024)
 
 
 @responses.activate
 def test_runware_missing_image_is_permanent(_keys):
     responses.post(RUNWARE, json={"data": [{}]})
     with pytest.raises(ProviderPermanentError):
-        RunwareImageGenerationAdapter().generate(prompt="x", size=1024)
+        RunwareImageGenerationAdapter().edit(image=b"foto", prompt="x", size=1024)
 
 
 # --- AbacatePay ---

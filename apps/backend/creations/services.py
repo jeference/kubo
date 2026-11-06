@@ -68,26 +68,20 @@ def start_creation(
     ip_hash: str,
     text: str,
     style: str,
-    photo_bytes: bytes | None,
+    photo_bytes: bytes,
     rights_accepted: bool,
     request_id: str = "",
 ) -> Creation:
     text = text.strip()
     if style not in prompts.STYLE_IDS:
         raise GuardFailed("Estilo inválido.", code="invalid_style")
-    if not text and photo_bytes is None:
-        raise GuardFailed("Descreva o que você quer ou envie uma foto.", code="empty_input")
-    if photo_bytes is not None and not rights_accepted:
+    if not rights_accepted:
         raise GuardFailed(
             "Confirme que você tem direitos sobre a foto e o consentimento de quem aparece nela.",
             code="rights_required",
         )
-    normalized = media.normalize_photo(photo_bytes) if photo_bytes is not None else None
-    photo = (
-        media.store(data=normalized, kind=Asset.Kind.PHOTO, mime="image/png")
-        if (normalized is not None)
-        else None
-    )
+    normalized = media.normalize_photo(photo_bytes)
+    photo = media.store(data=normalized, kind=Asset.Kind.PHOTO, mime="image/png")
 
     with transaction.atomic():
         creation = Creation.objects.create(style=style, **actor.owner_fields())
@@ -95,9 +89,9 @@ def start_creation(
             creation=creation,
             text=text,
             photo=photo,
-            rights_accepted_at=timezone.now() if photo is not None else None,
-            rights_accepted_ip_hash=ip_hash if photo is not None else "",
-            terms_version=settings.BUSINESS["TERMS_VERSION"] if photo is not None else "",
+            rights_accepted_at=timezone.now(),
+            rights_accepted_ip_hash=ip_hash,
+            terms_version=settings.BUSINESS["TERMS_VERSION"],
         )
         _enqueue_image(actor=actor, ip_hash=ip_hash, creation=creation)
         _record_started(creation, actor, request_id)
@@ -117,19 +111,12 @@ def _record_started(creation: Creation, actor, request_id: str) -> None:
 
 
 def _enqueue_image(*, actor, ip_hash: str, creation: Creation) -> ProviderTask:
-    source = creation.input
-    if source.photo_id:
-        kind = ProviderTask.Kind.PHOTO_TO_IMAGE
-        prompt = prompts.photo_prompt(style=creation.style, request=source.text)
-    else:
-        kind = ProviderTask.Kind.TEXT_TO_IMAGE
-        prompt = prompts.text_prompt(style=creation.style, text=source.text)
     return _new_task(
         actor=actor,
         ip_hash=ip_hash,
         creation=creation,
-        kind=kind,
-        rendered_prompt=prompt,
+        kind=ProviderTask.Kind.PHOTO_TO_IMAGE,
+        rendered_prompt=prompts.photo_prompt(style=creation.style, request=creation.input.text),
     )
 
 
@@ -287,7 +274,7 @@ def purge_expired_assets() -> dict:
     for creation in deleted.prefetch_related("versions__asset"):
         assets = [v.asset for v in creation.versions.all()]
         source = getattr(creation, "input", None)
-        if source is not None and source.photo is not None:
+        if source is not None:
             assets.append(source.photo)
         for asset in assets:
             if asset.purged_at is None:

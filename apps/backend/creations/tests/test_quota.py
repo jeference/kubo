@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from conftest import drain_worker
+from conftest import creation_payload, drain_worker
 from creations.models import Creation, ProviderTask
 from creations.quota import daily_spend_usd
 
 
 def _create(client):
-    return client.post("/api/creations/", {"text": "um gato", "style": "free"}, format="multipart")
+    return client.post("/api/creations/", creation_payload("um gato"), format="multipart")
 
 
 def _business(settings, **overrides):
@@ -56,7 +56,7 @@ def test_spend_cap_pauses_generation_but_not_catalog(visitor_client, settings):
     creation = Creation.objects.create(style="free", visitor=visitor_client.visitor)
     ProviderTask.objects.create(
         creation=creation,
-        kind=ProviderTask.Kind.TEXT_TO_IMAGE,
+        kind=ProviderTask.Kind.PHOTO_TO_IMAGE,
         status=ProviderTask.Status.SUCCEEDED,
         cost_usd=Decimal("0.05"),
     )

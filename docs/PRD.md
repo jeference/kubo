@@ -12,7 +12,7 @@
 
 ## 1. Visão geral
 
-A Kubo transforma uma ideia ou uma foto em um objeto físico, impresso em 3D. O cliente descreve o que quer ou envia uma imagem, vê o resultado em 2D, ajusta conversando com a IA e compra a peça a partir da imagem. A peça é impressa e enviada para a casa dele.
+A Kubo transforma uma foto em um objeto físico, impresso em 3D. O cliente envia uma imagem, pede uma mudança se quiser, vê o resultado em 2D, ajusta conversando com a IA e compra a peça a partir da imagem. A peça é impressa e enviada para a casa dele.
 
 **O cliente não vê um modelo 3D antes de comprar.** Como na Pockella, a compra abre assim que a imagem fica pronta. O modelo 3D é feito depois do pagamento, na preparação de impressão, que está fora do MVP.
 
@@ -75,7 +75,7 @@ Quem quer uma peça personalizada hoje precisa saber modelar em 3D, contratar um
 
 | Área | Dentro do MVP | Fora do MVP |
 |---|---|---|
-| **Criação** | Texto e foto, 4 estilos, imagem 2D, edição por chat com versões | Modelo e visualizador 3D, 4 opções por geração, desenho livre, modo Duo |
+| **Criação** | Foto com pedido de alteração opcional, 4 estilos, imagem 2D, edição por chat com versões | Criar só a partir de texto, modelo e visualizador 3D, 4 opções por geração, desenho livre, modo Duo |
 | **Continuidade** | Retomar criação ao recarregar, "Minhas criações", excluir | Galeria pública, Remix, templates |
 | **Compra** | Tamanho, quantidade, carrinho, Comprar agora, cotação de frete, PIX, acompanhamento do pedido | Cartão, cupons, assinatura, venda de arquivo, realidade aumentada |
 | **Conta** | Opcional, com transferência de criações e pedidos ao entrar | Login social |
@@ -152,7 +152,7 @@ O pedido pago fica registrado com tudo congelado, e o cliente o vê como **Receb
 
 | ID | Requisito | Prioridade |
 |---|---|---|
-| RF-CRI-01 | Criar a partir de texto (até 1.000 caracteres), foto, ou foto com pedido de alteração | P0 |
+| RF-CRI-01 | Criar a partir de uma foto, que é obrigatória, com pedido de alteração opcional (até 1.000 caracteres) | P0 |
 | RF-CRI-02 | Aceitar PNG, JPG e WEBP de até 10 MB [Proposta], corrigindo a orientação da foto | P0 |
 | RF-CRI-03 | Oferecer os estilos Livre, Pixar, Mini Pop e Chibi, com miniatura | P0 |
 | RF-CRI-04 | Gerar uma imagem por solicitação, em fundo claro | P0 |

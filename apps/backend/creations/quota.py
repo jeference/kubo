@@ -17,7 +17,6 @@ from creations.models import ProviderTask, QuotaReservation
 
 _COUNTED = (QuotaReservation.State.RESERVED, QuotaReservation.State.CONSUMED)
 _TASK_KIND_TO_QUOTA = {
-    ProviderTask.Kind.TEXT_TO_IMAGE: QuotaReservation.Kind.IMAGE,
     ProviderTask.Kind.PHOTO_TO_IMAGE: QuotaReservation.Kind.IMAGE,
     ProviderTask.Kind.IMAGE_EDIT: QuotaReservation.Kind.EDIT,
 }
