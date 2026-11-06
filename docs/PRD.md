@@ -155,12 +155,11 @@ O pedido pago fica registrado com tudo congelado, e o cliente o vê como **Receb
 | RF-CRI-01 | Criar a partir de uma foto, que é obrigatória, com pedido de alteração opcional (até 1.000 caracteres) | P0 |
 | RF-CRI-02 | Aceitar PNG, JPG e WEBP de até 10 MB [Proposta], corrigindo a orientação da foto | P0 |
 | RF-CRI-03 | Oferecer os estilos Livre, Pixar, Mini Pop e Chibi, com miniatura | P0 |
-| RF-CRI-04 | Gerar uma imagem por solicitação, em fundo claro | P0 |
+| RF-CRI-04 | Gerar uma imagem por solicitação | P0 |
 | RF-CRI-05 | Abrir a compra assim que a imagem fica pronta, sem etapa de 3D | P0 |
 | RF-CRI-06 | Editar por chat (até 200 caracteres por instrução), a partir de qualquer versão | P0 |
 | RF-CRI-07 | Mostrar o histórico de versões, cancelar a edição ou concluir com a versão escolhida | P0 |
 | RF-CRI-08 | Manter nos itens do carrinho a imagem com que foram adicionados, mesmo depois de uma edição | P0 |
-| RF-CRI-09 | Avisar quando uma edição perder o fundo claro | P1 |
 | RF-CRI-12 | Mostrar etapas e tempo decorrido durante cada espera | P0 |
 | RF-CRI-13 | Retomar qualquer criação e tarefa em andamento após recarregar | P0 |
 
@@ -225,7 +224,7 @@ O pedido pago fica registrado com tudo congelado, e o cliente o vê como **Receb
 
 | ID | Regra |
 |---|---|
-| RN-01 | **O 2D é gerado com GPT Image 2, via Runware**, como no protótipo. O MVP não gera 3D. |
+| RN-01 | **O 2D é gerado com GPT Image 2, via Runware.** Se ele falhar por qualquer motivo, inclusive recusa de conteúdo, a mesma geração tenta o **Nano Banana Pro**, com o mesmo prompt. Cada edição usa o modelo que gerou a imagem editada. O MVP não gera 3D. |
 | RN-02 | A cota é reservada ao iniciar a tarefa e debitada só no sucesso. Falhas e recusas devolvem a cota. |
 | RN-03 | A cota vale separadamente para geração 2D e edição. |
 | RN-04 | Limites iniciais por dia e por sessão: **10 gerações 2D e 15 edições** [Proposta]. Contas têm o mesmo limite. A contagem renova à meia-noite de Brasília. |
@@ -330,7 +329,7 @@ Estas notas são pontos de leitura, não aconselhamento jurídico.
   - O cliente da API é dono dos resultados, e o uso comercial é permitido.
   - Proíbem reproduzir "a identidade ou a semelhança" de uma pessoa viva sem consentimento, o que atinge diretamente o fluxo de fotos.
   - A responsabilidade por entradas e indenizações recai sobre quem usa o serviço, e a Runware não guarda resultados a longo prazo.
-- **Políticas do GPT Image 2 acessado via Runware:** ainda não analisadas.
+- **Políticas do GPT Image 2 e do Nano Banana Pro acessados via Runware:** ainda não analisadas. O Nano Banana Pro aceita personagens que o GPT Image 2 recusa (o Batman, por exemplo), então mais pedidos podem cair na RN-27.
 - **Direito de arrependimento em peça personalizada:** vale conferir a redação da política de trocas à luz do Código de Defesa do Consumidor.
 - **Nota fiscal e tributação da venda:** a emissão fica fora do sistema no MVP, mas precisa estar resolvida antes da primeira venda.
 - **Propriedade intelectual:** personagens e marcas, com fluxo de remoção.

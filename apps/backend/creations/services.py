@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
-import io
 from datetime import timedelta
 
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
-from PIL import Image, ImageStat
 
 from catalog import prompts
 from common.exceptions import GuardFailed, ResourceNotFound
@@ -18,10 +16,6 @@ from creations.fsm import CREATION_FSM, TASK_ACTIVE
 from creations.models import Creation, CreationInput, ProviderTask
 from media import services as media
 from media.models import Asset
-
-_BACKGROUND_MIN_MEDIAN = 245
-_BACKGROUND_MAX_STDDEV = 5
-_BACKGROUND_STRIP_RATIO = 0.02
 
 
 def creations_for(actor):
@@ -224,23 +218,6 @@ def delete_all_for_user(user) -> None:
 
 def transfer_visitor_creations(*, visitor, user) -> int:
     return Creation.objects.filter(visitor=visitor, user__isnull=True).update(user=user)
-
-
-def plain_background(png: bytes) -> bool:
-    image = Image.open(io.BytesIO(png)).convert("RGB")
-    width, height = image.size
-    strip = max(1, int(min(width, height) * _BACKGROUND_STRIP_RATIO))
-    boxes = [
-        (0, 0, width, strip),
-        (0, height - strip, width, height),
-        (0, 0, strip, height),
-        (width - strip, 0, width, height),
-    ]
-    for box in boxes:
-        stat = ImageStat.Stat(image.crop(box))
-        if min(stat.median) < _BACKGROUND_MIN_MEDIAN or max(stat.stddev) > _BACKGROUND_MAX_STDDEV:
-            return False
-    return True
 
 
 def purge_expired_assets() -> dict:

@@ -24,8 +24,6 @@ class ImageVersionSerializer(GlobalIdSerializer):
             "origin",
             "instruction",
             "image_url",
-            "has_plain_background",
-            "background_lost",
             "created_at",
         ]
         read_only_fields = fields

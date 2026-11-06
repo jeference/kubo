@@ -753,8 +753,6 @@ export interface components {
             readonly origin: components["schemas"]["OriginEnum"];
             readonly instruction: string;
             readonly image_url: string;
-            readonly has_plain_background: boolean;
-            readonly background_lost: boolean;
             /** Format: date-time */
             readonly created_at: string;
         };

@@ -102,8 +102,6 @@ class ImageVersion(BaseModel):
     task = models.ForeignKey(
         ProviderTask, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
     )
-    has_plain_background = models.BooleanField(default=True)
-    background_lost = models.BooleanField(default=False)
 
     class Meta(BaseModel.Meta):
         ordering = ["number"]

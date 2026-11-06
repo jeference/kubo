@@ -19,8 +19,6 @@ import { messageOf } from "@/lib/errors";
 
 const MAX_INSTRUCTION = 200;
 const SWIPE_THRESHOLD = 20;
-const BACKGROUND_LOST =
-  "O fundo saiu do branco, o que pode atrapalhar a produção da peça. Escolha outra versão ou peça para voltar ao fundo branco.";
 const REFUSED =
   "Essa edição esbarrou nas regras de conteúdo. Personagens e marcas conhecidos, nudez e violência costumam ser recusados. Tente descrever de outro jeito.";
 const FAILED = "Não conseguimos editar agora. Tente de novo.";
@@ -78,7 +76,6 @@ function Editor({ creation, onClose }: { creation: Creation; onClose: () => void
     if (versions.length > knownVersions.current) {
       const newest = versions.at(-1);
       if (newest) setSelectedId(newest.id);
-      if (newest?.background_lost) setIsChatOpen(true);
     }
     knownVersions.current = versions.length;
   }, [versions]);
@@ -237,7 +234,6 @@ function Editor({ creation, onClose }: { creation: Creation; onClose: () => void
                   <Sparkles className="size-4 text-accent" aria-hidden />
                   Pronto!
                 </div>
-                {version.background_lost && <Warning>{BACKGROUND_LOST}</Warning>}
                 <button
                   type="button"
                   disabled={isBusy}

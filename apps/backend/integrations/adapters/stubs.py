@@ -1,6 +1,7 @@
 """Stubs: rodam o produto inteiro sem rede e sem custo.
 
-Palavras no prompt simulam situações difíceis: `__recusar__` (conteúdo recusado) e
+Palavras no prompt simulam situações difíceis: `__recusar__` (conteúdo recusado em todos os
+modelos), `__recusar_principal__` (recusado só no modelo principal, para o reserva assumir) e
 `__falhar__` (erro do provedor). O estado do PIX fica no cache, compartilhado entre processos.
 """
 
@@ -68,20 +69,17 @@ def _figurine(size: int) -> bytes:
     return _png(image)
 
 
-def _check_triggers(prompt: str) -> None:
-    if "__recusar__" in prompt:
-        raise ContentRefused("Conteúdo recusado pelo stub.")
-    if "__falhar__" in prompt:
-        raise ProviderTemporaryError("Falha simulada pelo stub.")
-
-
 class StubImageGenerationAdapter(ImageGenerationPort):
     provider = "stub"
-    model_name = "stub-image"
+    models = ("stub-image", "stub-image-reserva")
 
-    def edit(self, *, image: bytes, prompt: str, size: int) -> GeneratedImage:
+    def edit(self, *, image: bytes, prompt: str, size: int, model: str) -> GeneratedImage:
         _delay("STUB_IMAGE_SECONDS", 1)
-        _check_triggers(prompt)
+        refuse_main = "__recusar_principal__" in prompt and model == self.models[0]
+        if "__recusar__" in prompt or refuse_main:
+            raise ContentRefused("Conteúdo recusado pelo stub.")
+        if "__falhar__" in prompt:
+            raise ProviderTemporaryError("Falha simulada pelo stub.")
         return GeneratedImage(data=_figurine(size), cost_usd=0.0)
 
 

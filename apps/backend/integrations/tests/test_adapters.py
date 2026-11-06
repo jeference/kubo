@@ -24,6 +24,7 @@ from integrations.ports import (
 
 RUNWARE = "https://api.runware.ai/v1"
 PNG = base64.b64encode(b"imagem").decode()
+GPT = "openai:gpt-image@2"
 
 
 @pytest.fixture
@@ -45,7 +46,8 @@ def test_runware_edit_returns_bytes_and_cost(_keys):
         RUNWARE,
         json={"data": [{"imageDataURI": f"data:image/png;base64,{PNG}", "cost": 0.015}]},
     )
-    result = RunwareImageGenerationAdapter().edit(image=b"foto", prompt="um gato", size=1024)
+    adapter = RunwareImageGenerationAdapter()
+    result = adapter.edit(image=b"foto", prompt="um gato", size=1024, model=GPT)
     assert result.data == b"imagem"
     assert result.cost_usd == 0.015
     body = json.loads(responses.calls[0].request.body)[0]
@@ -57,9 +59,20 @@ def test_runware_edit_returns_bytes_and_cost(_keys):
 @responses.activate
 def test_runware_edit_sends_reference_image(_keys):
     responses.post(RUNWARE, json={"data": [{"imageDataURI": f"data:image/png;base64,{PNG}"}]})
-    RunwareImageGenerationAdapter().edit(image=b"foto", prompt="azul", size=1024)
+    RunwareImageGenerationAdapter().edit(image=b"foto", prompt="azul", size=1024, model=GPT)
     body = json.loads(responses.calls[0].request.body)[0]
     assert body["inputs"]["referenceImages"][0].startswith("data:image/png;base64,")
+
+
+@responses.activate
+def test_runware_uses_the_requested_model(_keys, settings):
+    settings.RUNWARE_IMAGE_MODEL = GPT
+    settings.RUNWARE_IMAGE_FALLBACK_MODEL = "google:4@2"
+    adapter = RunwareImageGenerationAdapter()
+    assert adapter.models == (GPT, "google:4@2")
+    responses.post(RUNWARE, json={"data": [{"imageDataURI": f"data:image/png;base64,{PNG}"}]})
+    adapter.edit(image=b"foto", prompt="azul", size=1024, model="google:4@2")
+    assert json.loads(responses.calls[0].request.body)[0]["model"] == "google:4@2"
 
 
 @responses.activate
@@ -69,7 +82,7 @@ def test_runware_refusal_becomes_content_refused(_keys):
         json={"data": [], "errors": [{"code": "x", "message": "Rejected by the safety system"}]},
     )
     with pytest.raises(ContentRefused):
-        RunwareImageGenerationAdapter().edit(image=b"foto", prompt="x", size=1024)
+        RunwareImageGenerationAdapter().edit(image=b"foto", prompt="x", size=1024, model=GPT)
 
 
 @responses.activate
@@ -78,24 +91,24 @@ def test_runware_other_error_is_permanent(_keys):
         RUNWARE, json={"data": [], "errors": [{"code": "x", "message": "Invalid model"}]}
     )
     with pytest.raises(ProviderPermanentError):
-        RunwareImageGenerationAdapter().edit(image=b"foto", prompt="x", size=1024)
+        RunwareImageGenerationAdapter().edit(image=b"foto", prompt="x", size=1024, model=GPT)
 
 
 @responses.activate
 def test_runware_network_and_5xx_are_temporary(_keys):
     responses.post(RUNWARE, body=requests.ConnectionError("fora"))
     with pytest.raises(ProviderTemporaryError):
-        RunwareImageGenerationAdapter().edit(image=b"foto", prompt="x", size=1024)
+        RunwareImageGenerationAdapter().edit(image=b"foto", prompt="x", size=1024, model=GPT)
     responses.replace(responses.POST, RUNWARE, json={"data": []}, status=503)
     with pytest.raises(ProviderTemporaryError):
-        RunwareImageGenerationAdapter().edit(image=b"foto", prompt="x", size=1024)
+        RunwareImageGenerationAdapter().edit(image=b"foto", prompt="x", size=1024, model=GPT)
 
 
 @responses.activate
 def test_runware_missing_image_is_permanent(_keys):
     responses.post(RUNWARE, json={"data": [{}]})
     with pytest.raises(ProviderPermanentError):
-        RunwareImageGenerationAdapter().edit(image=b"foto", prompt="x", size=1024)
+        RunwareImageGenerationAdapter().edit(image=b"foto", prompt="x", size=1024, model=GPT)
 
 
 # --- AbacatePay ---

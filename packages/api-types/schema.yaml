@@ -1297,20 +1297,12 @@ components:
         image_url:
           type: string
           readOnly: true
-        has_plain_background:
-          type: boolean
-          readOnly: true
-        background_lost:
-          type: boolean
-          readOnly: true
         created_at:
           type: string
           format: date-time
           readOnly: true
       required:
-      - background_lost
       - created_at
-      - has_plain_background
       - id
       - image_url
       - instruction

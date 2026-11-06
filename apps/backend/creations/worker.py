@@ -21,9 +21,10 @@ from common.fsm import apply_transition
 from creations import quota
 from creations.fsm import CREATION_FSM
 from creations.models import Creation, ImageVersion, ProviderTask
-from creations.services import plain_background
 from integrations.ports import (
     ContentRefused,
+    GeneratedImage,
+    ImageGenerationPort,
     ProviderPermanentError,
     ProviderTemporaryError,
     get_image_generation_port,
@@ -96,20 +97,42 @@ def _record_cost(task: ProviderTask, cost: float | None) -> None:
         task.cost_usd = Decimal(str(cost))
 
 
+def _generate(
+    task: ProviderTask, port: ImageGenerationPort, *, image: bytes, models: tuple[str, ...]
+) -> GeneratedImage:
+    """Tenta cada modelo em ordem. Qualquer falha passa para o próximo; sem próximo, relança."""
+    size = settings.BUSINESS["IMAGE_SIZE"]
+    for index, model in enumerate(models):
+        task.model_name = model
+        task.save(update_fields=["model_name", "updated_at"])
+        try:
+            return port.edit(image=image, prompt=task.rendered_prompt, size=size, model=model)
+        except (
+            ContentRefused,
+            ProviderTemporaryError,
+            ProviderPermanentError,
+            requests.RequestException,
+        ) as exc:
+            if index == len(models) - 1:
+                raise
+            log.warning("image_model_failed", model=model, error=str(exc)[:200])
+
+
 def _run_image(task: ProviderTask) -> None:
     port = get_image_generation_port()
     task.provider = port.provider
-    task.model_name = port.model_name
     task.attempts += 1
-    task.save(update_fields=["provider", "model_name", "attempts", "updated_at"])
+    task.save(update_fields=["provider", "attempts", "updated_at"])
 
-    size = settings.BUSINESS["IMAGE_SIZE"]
     creation = task.creation
     if task.kind == ProviderTask.Kind.PHOTO_TO_IMAGE:
         source_asset = creation.input.photo
+        models = port.models
     else:
+        # A edição fica no modelo que gerou a imagem de origem.
         source_asset = task.source_version.asset
-    result = port.edit(image=media.read(source_asset), prompt=task.rendered_prompt, size=size)
+        models = (task.source_version.task.model_name,)
+    result = _generate(task, port, image=media.read(source_asset), models=models)
 
     _record_cost(task, result.cost_usd)
     if _is_cancelled(task):
@@ -118,8 +141,6 @@ def _run_image(task: ProviderTask) -> None:
         return
 
     asset = media.store(data=result.data, kind=Asset.Kind.IMAGE, mime="image/png")
-    plain = plain_background(result.data)
-    source_plain = task.source_version.has_plain_background if task.source_version else True
     origin = {
         ProviderTask.Kind.PHOTO_TO_IMAGE: ImageVersion.Origin.PHOTO,
         ProviderTask.Kind.IMAGE_EDIT: ImageVersion.Origin.EDIT,
@@ -136,8 +157,6 @@ def _run_image(task: ProviderTask) -> None:
             instruction=task.instruction,
             asset=asset,
             task=task,
-            has_plain_background=plain,
-            background_lost=source_plain and not plain,
         )
         _succeed(task)
         if task.kind != ProviderTask.Kind.IMAGE_EDIT:

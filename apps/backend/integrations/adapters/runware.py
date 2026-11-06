@@ -87,14 +87,14 @@ class RunwareImageGenerationAdapter(ImageGenerationPort):
     provider = "runware"
 
     @property
-    def model_name(self) -> str:
-        return settings.RUNWARE_IMAGE_MODEL
+    def models(self) -> tuple[str, ...]:
+        return (settings.RUNWARE_IMAGE_MODEL, settings.RUNWARE_IMAGE_FALLBACK_MODEL)
 
-    def _task(self, *, prompt: str, size: int) -> dict:
+    def _task(self, *, prompt: str, size: int, model: str) -> dict:
         return {
             "taskType": "imageInference",
             "taskUUID": str(uuid.uuid4()),
-            "model": settings.RUNWARE_IMAGE_MODEL,
+            "model": model,
             "positivePrompt": prompt,
             "width": size,
             "height": size,
@@ -110,7 +110,7 @@ class RunwareImageGenerationAdapter(ImageGenerationPort):
             raise ProviderPermanentError("Runware não devolveu a imagem.")
         return GeneratedImage(data=_from_data_uri(item["imageDataURI"]), cost_usd=item.get("cost"))
 
-    def edit(self, *, image: bytes, prompt: str, size: int) -> GeneratedImage:
-        task = self._task(prompt=prompt, size=size)
+    def edit(self, *, image: bytes, prompt: str, size: int, model: str) -> GeneratedImage:
+        task = self._task(prompt=prompt, size=size, model=model)
         task["inputs"] = {"referenceImages": [_to_data_uri(image)]}
         return self._result(_run(task, "edit_image"))

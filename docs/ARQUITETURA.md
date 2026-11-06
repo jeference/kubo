@@ -22,7 +22,7 @@ flowchart LR
     A --> DB[(PostgreSQL)]
     K[Worker de geração] --> DB
     S[Tarefas agendadas] --> DB
-    K --> R[Runware<br/>GPT Image 2]
+    K --> R[Runware<br/>GPT Image 2, reserva Nano Banana Pro]
     K --> ST[(Storage S3)]
     A --> ST
     A --> P[Gateway PIX]
@@ -357,19 +357,24 @@ sequenceDiagram
 - Comando `python manage.py run_generation_worker`, em processo próprio, com várias threads [Proposta: 8].
 - Pega tarefas com `SELECT ... FOR UPDATE SKIP LOCKED` e grava `locked_until` como concessão de tempo. Se o processo morrer, a concessão vence e outro worker assume.
 - **2D e edição** são chamadas síncronas no provedor, com timeout de 90 s.
+- **Modelo:**
+  - **Imagem nova:** usa o principal (`RUNWARE_IMAGE_MODEL`, GPT Image 2). Se ele falhar por qualquer motivo, a mesma tentativa repete no reserva (`RUNWARE_IMAGE_FALLBACK_MODEL`, Nano Banana Pro), com o mesmo prompt.
+  - **Edição:** usa só o modelo que gerou a imagem de origem, sem reserva.
+  - **Registro:** `ProviderTask.model_name` guarda o modelo que de fato gerou.
+  - **Concessão:** a de 200 s cobre as duas chamadas.
 
 ### Fluxo de cada resultado
 
 1. Gravar a imagem no storage imediatamente. A Runware não guarda resultados a longo prazo.
-2. Checar o fundo claro, para gerar um aviso sem bloquear. O fundo claro facilita a geração do 3D na produção.
-3. Em uma transação, gravar a `ImageVersion`, o custo informado pelo provedor, debitar a cota e avançar a criação para `ready`.
+2. Em uma transação, gravar a `ImageVersion`, o custo informado pelo provedor, debitar a cota e avançar a criação para `ready`.
 
 ### Falhas
 
 | Situação | Tratamento |
 |---|---|
-| Erro temporário (timeout, 5xx, 429) | Até 3 tentativas, com espera crescente |
-| Conteúdo recusado | Sem nova tentativa. Código próprio e mensagem amigável. Cota liberada |
+| Falha do modelo principal numa imagem nova (recusa ou qualquer erro) | Repete no modelo reserva, na mesma tentativa. O erro final é o do reserva |
+| Erro temporário (timeout, 5xx, 429) | Até 3 tentativas, com espera crescente. Cada tentativa recomeça pelo principal |
+| Conteúdo recusado (no reserva também, ou numa edição) | Sem nova tentativa. Código próprio e mensagem amigável. Cota liberada |
 | Tarefa sem conclusão muito além do limite (2 × 5 min [Proposta]) | A varredura de tarefas presas encerra com código de timeout. Cota liberada |
 | Edição cancelada pelo cliente | Tarefa marcada `cancelled`, resultado ignorado. Se já enviada, o custo é registrado e a cota, consumida |
 
@@ -387,7 +392,7 @@ Os ports ficam em `integrations/ports/`, e cada adapter é escolhido por um cami
 
 | Port | Operações | Adapter do MVP | Stub |
 |---|---|---|---|
-| `ImageGenerationPort` | gerar de foto, editar | Runware (`openai:gpt-image@2`) | Sim |
+| `ImageGenerationPort` | gerar de foto, editar; recebe o modelo de cada chamada | Runware (`openai:gpt-image@2`, reserva `google:4@2`) | Sim |
 | `PaymentGatewayPort` | criar cobrança, consultar; reembolsar com o app de parceiros | AbacatePay | Sim |
 | `ShippingPort` | cotar | Melhor Envio | Sim |
 | `MediaStoragePort` | URL de upload, URL de download, gravar, apagar | S3 | Disco local |

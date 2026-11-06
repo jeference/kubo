@@ -91,6 +91,38 @@ def test_provider_failure_retries_then_fails_and_user_can_retry(visitor_client):
     assert response.data["error"] is None
 
 
+def _edit_task_model(client, detail) -> str:
+    client.post(
+        f"/api/creations/{detail['id']}/edits/",
+        {"version_id": detail["versions"][0]["id"], "instruction": "capa vermelha"},
+    )
+    drain_worker()
+    edit = ProviderTask.objects.get(
+        creation__globalid=detail["id"], kind=ProviderTask.Kind.IMAGE_EDIT
+    )
+    assert edit.status == ProviderTask.Status.SUCCEEDED
+    return edit.model_name
+
+
+def test_main_model_generates_and_edits(visitor_client):
+    detail = make_ready_creation(visitor_client)
+    photo = ProviderTask.objects.get(
+        creation__globalid=detail["id"], kind=ProviderTask.Kind.PHOTO_TO_IMAGE
+    )
+    assert photo.model_name == "stub-image"
+    assert _edit_task_model(visitor_client, detail) == "stub-image"
+
+
+def test_fallback_model_takes_over_and_keeps_the_edits(visitor_client):
+    detail = make_ready_creation(visitor_client, text="__recusar_principal__")
+    photo = ProviderTask.objects.get(
+        creation__globalid=detail["id"], kind=ProviderTask.Kind.PHOTO_TO_IMAGE
+    )
+    assert photo.model_name == "stub-image-reserva"
+    assert photo.attempts == 1
+    assert _edit_task_model(visitor_client, detail) == "stub-image-reserva"
+
+
 def test_edit_creates_version_and_apply_switches_image(visitor_client):
     detail = make_ready_creation(visitor_client)
     first_version = detail["versions"][0]["id"]

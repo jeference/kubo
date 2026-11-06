@@ -64,8 +64,6 @@ class Migration(migrations.Migration):
                 ('number', models.PositiveSmallIntegerField()),
                 ('origin', models.CharField(choices=[('photo', 'Foto'), ('edit', 'Edição')], max_length=8)),
                 ('instruction', models.CharField(blank=True, max_length=255)),
-                ('has_plain_background', models.BooleanField(default=True)),
-                ('background_lost', models.BooleanField(default=False)),
                 ('asset', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='+', to='media.asset')),
                 ('creation', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='versions', to='creations.creation')),
                 ('parent', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='children', to='creations.imageversion')),

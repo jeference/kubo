@@ -37,10 +37,11 @@ class GeneratedImage:
 
 class ImageGenerationPort(ABC):
     provider = ""
-    model_name = ""
+    # Modelos para uma imagem nova, em ordem: o principal e depois o reserva.
+    models: tuple[str, ...] = ()
 
     @abstractmethod
-    def edit(self, *, image: bytes, prompt: str, size: int) -> GeneratedImage:
+    def edit(self, *, image: bytes, prompt: str, size: int, model: str) -> GeneratedImage:
         """Imagem de referência + instrução: transforma a foto do cliente e edita versões."""
 
 

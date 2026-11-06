@@ -167,7 +167,8 @@ BUSINESS = {
     "ESTIMATED_COST_USD": {"image": 0.02, "edit": 0.02},
     # Worker.
     "TASK_MAX_ATTEMPTS": 3,
-    "TASK_LEASE_SECONDS": 150,
+    # Cobre duas chamadas de até 90 s: o modelo principal e o reserva.
+    "TASK_LEASE_SECONDS": 200,
     "TASK_TIMEOUT_SECONDS": 300,
     "WORKER_THREADS": env.int("WORKER_THREADS", default=8),
     # Upload de foto e textos.
@@ -221,6 +222,9 @@ EMAIL_ADAPTER = env(
 # Runware.
 RUNWARE_API_KEY = env("RUNWARE_API_KEY", default="")
 RUNWARE_IMAGE_MODEL = env("RUNWARE_IMAGE_MODEL", default="openai:gpt-image@2")
+# Reserva: assume uma imagem nova quando o principal falha por qualquer motivo, inclusive
+# recusa de conteúdo. Nano Banana Pro aceita personagens que o GPT Image 2 recusa.
+RUNWARE_IMAGE_FALLBACK_MODEL = env("RUNWARE_IMAGE_FALLBACK_MODEL", default="google:4@2")
 
 # AbacatePay.
 ABACATE_PAY_BASE_URL = env("ABACATE_PAY_BASE_URL", default="https://api.abacatepay.com/v2")
