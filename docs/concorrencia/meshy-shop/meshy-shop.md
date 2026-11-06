@@ -226,7 +226,9 @@ O código também bloqueia a compra no checkout quando o veredito não correspon
 
 ## 6. Pockella e Creative Lab: o que existe em volta da loja
 
-**Pockella** (`pockella.com`, "by Meshy") é uma marca-irmã com **o mesmo catálogo e os mesmos preços**, mais uma faixa que a loja da Meshy não tem: *"Cerca de R$ 28 de desconto no seu primeiro pedido · autoaplicado"*. O checkout já usa o domínio dela, e o código tem a flag `pro_3398_shop_to_pockella`. Isso sugere uma migração da loja para uma marca própria de consumidor, sem o nome de ferramenta técnica. É inferência: a Meshy não diz isso em nenhum lugar que eu tenha visto.
+**Pockella** (`pockella.com`, "by Meshy") é uma marca-irmã com uma faixa que a loja da Meshy não tem: *"Cerca de R$ 28 de desconto no seu primeiro pedido · autoaplicado"*. O checkout já usa o domínio dela, e o código tem a flag `pro_3398_shop_to_pockella`. Isso sugere uma migração da loja para uma marca própria de consumidor, sem o nome de ferramenta técnica.
+
+> **Atualização de 05/11/2026:** a Pockella foi estudada à parte, em [pockella.md](../pockella/pockella.md). Ela é a loja que substitui esta: o FAQ diz que é "a loja própria da Meshy", e a página de pedidos manda para a meshy.ai os pedidos feitos antes de 12/10/2026. O site, a API e o pipeline de geração são novos (2D no fal.ai, classificador antes de gerar), e o catálogo já é maior que o desta loja.
 
 ![Pockella](prints/desktop/22-pockella.jpg)
 
