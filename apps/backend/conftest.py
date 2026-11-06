@@ -102,12 +102,11 @@ def photo_upload():
 
 
 def creation_payload(text="um dragão azul", **fields):
-    """Corpo de `POST /api/creations/`: foto com direitos aceitos e o pedido de alteração."""
+    """Corpo de `POST /api/creations/`: foto e o pedido de alteração."""
     return {
         "text": text,
         "style": "free",
         "photo": photo_upload(),
-        "rights_accepted": True,
         **fields,
     }
 

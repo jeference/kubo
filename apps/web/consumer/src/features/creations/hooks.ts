@@ -61,7 +61,6 @@ export interface StartCreationInput {
   text: string;
   style: string;
   photo: File;
-  rightsAccepted: boolean;
 }
 
 export function useStartCreation() {
@@ -73,7 +72,6 @@ export function useStartCreation() {
       form.set("text", input.text);
       form.set("style", input.style);
       form.set("photo", input.photo);
-      form.set("rights_accepted", String(input.rightsAccepted));
       return unwrap(
         await api.POST("/api/creations/", {
           body: form as never,

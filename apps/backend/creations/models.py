@@ -45,8 +45,6 @@ class CreationInput(BaseModel):
     creation = models.OneToOneField(Creation, on_delete=models.CASCADE, related_name="input")
     text = models.TextField(blank=True)
     photo = models.ForeignKey("media.Asset", on_delete=models.PROTECT, related_name="+")
-    rights_accepted_at = models.DateTimeField(null=True, blank=True)
-    rights_accepted_ip_hash = models.CharField(max_length=64, blank=True)
     terms_version = models.CharField(max_length=16, blank=True)
 
 

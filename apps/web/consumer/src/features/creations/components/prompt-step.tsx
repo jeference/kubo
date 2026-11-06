@@ -1,12 +1,10 @@
 "use client";
 
 import { Button } from "@kubo/ui/button";
-import { Checkbox } from "@kubo/ui/checkbox";
 import { Textarea } from "@kubo/ui/input";
 import { cn } from "@kubo/ui/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@kubo/ui/popover";
 import { ChevronDown, ImagePlus, Sparkles, X } from "lucide-react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -33,16 +31,14 @@ export function PromptStep() {
   const [prompt, setPrompt] = useState("");
   const [styleId, setStyleId] = useState("free");
   const [photo, setPhoto] = useState<File | null>(null);
-  const [rightsAccepted, setRightsAccepted] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const trimmed = prompt.trim();
-  const canSubmit = photo !== null && rightsAccepted;
 
   function submit() {
-    if (!photo || !canSubmit || start.isPending) return;
+    if (!photo || start.isPending) return;
     start.mutate(
-      { text: trimmed, style: styleId, photo, rightsAccepted },
+      { text: trimmed, style: styleId, photo },
       {
         onSuccess: (creation) => router.push(`/criacoes/${creation.id}`),
         onError: (error) => toast.error(messageOf(error)),
@@ -139,25 +135,11 @@ export function PromptStep() {
           )}
         </div>
 
-        {photo && (
-          <Checkbox
-            className="rounded-2xl bg-sunken p-3"
-            checked={rightsAccepted}
-            onChange={(event) => setRightsAccepted(event.target.checked)}
-          >
-            Tenho direitos sobre esta foto e o consentimento de quem aparece nela. Veja os{" "}
-            <Link href="/termos" className="underline" target="_blank">
-              Termos de Uso
-            </Link>
-            .
-          </Checkbox>
-        )}
-
         <Button
           type="submit"
           variant="primary"
           size="lg"
-          disabled={!canSubmit}
+          disabled={!photo}
           pending={start.isPending}
           className="h-12 w-full text-base sm:h-14"
         >

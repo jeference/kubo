@@ -1116,9 +1116,6 @@ components:
         photo:
           type: string
           format: binary
-        rights_accepted:
-          type: boolean
-          default: false
       required:
       - photo
       - style

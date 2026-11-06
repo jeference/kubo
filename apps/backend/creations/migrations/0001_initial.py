@@ -45,8 +45,6 @@ class Migration(migrations.Migration):
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('text', models.TextField(blank=True)),
-                ('rights_accepted_at', models.DateTimeField(blank=True, null=True)),
-                ('rights_accepted_ip_hash', models.CharField(blank=True, max_length=64)),
                 ('terms_version', models.CharField(blank=True, max_length=16)),
                 ('creation', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='input', to='creations.creation')),
                 ('photo', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='+', to='media.asset')),

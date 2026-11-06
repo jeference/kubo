@@ -163,7 +163,6 @@ O pedido pago fica registrado com tudo congelado, e o cliente o vê como **Receb
 | RF-CRI-09 | Avisar quando uma edição perder o fundo claro | P1 |
 | RF-CRI-12 | Mostrar etapas e tempo decorrido durante cada espera | P0 |
 | RF-CRI-13 | Retomar qualquer criação e tarefa em andamento após recarregar | P0 |
-| RF-CRI-14 | Exigir a declaração de direitos e consentimento ao enviar foto | P0 |
 
 ### 6.2 Minhas criações
 
@@ -265,7 +264,6 @@ O pedido pago fica registrado com tudo congelado, e o cliente o vê como **Receb
 
 | ID | Regra |
 |---|---|
-| RN-25 | Quem envia uma foto declara ter direitos sobre ela e o consentimento das pessoas retratadas. |
 | RN-26 | Recusas do provedor viram mensagens amigáveis. Passar pelo filtro do provedor não significa que o conteúdo é permitido. |
 | RN-27 | Um pedido com conteúdo que viole direitos de terceiros pode ser recusado e reembolsado. A ferramenta para isso fica no app de parceiros. |
 | RN-28 | **Arquivos ligados a pedidos nunca são apagados automaticamente.** |

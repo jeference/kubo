@@ -69,17 +69,11 @@ def start_creation(
     text: str,
     style: str,
     photo_bytes: bytes,
-    rights_accepted: bool,
     request_id: str = "",
 ) -> Creation:
     text = text.strip()
     if style not in prompts.STYLE_IDS:
         raise GuardFailed("Estilo inválido.", code="invalid_style")
-    if not rights_accepted:
-        raise GuardFailed(
-            "Confirme que você tem direitos sobre a foto e o consentimento de quem aparece nela.",
-            code="rights_required",
-        )
     normalized = media.normalize_photo(photo_bytes)
     photo = media.store(data=normalized, kind=Asset.Kind.PHOTO, mime="image/png")
 
@@ -89,8 +83,6 @@ def start_creation(
             creation=creation,
             text=text,
             photo=photo,
-            rights_accepted_at=timezone.now(),
-            rights_accepted_ip_hash=ip_hash,
             terms_version=settings.BUSINESS["TERMS_VERSION"],
         )
         _enqueue_image(actor=actor, ip_hash=ip_hash, creation=creation)

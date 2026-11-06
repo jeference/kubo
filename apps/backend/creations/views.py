@@ -60,7 +60,6 @@ class CreationListView(ListAPIView):
             text=values.get("text", ""),
             style=values["style"],
             photo_bytes=values["photo"].read(),
-            rights_accepted=values["rights_accepted"],
             request_id=request_id_of(request),
         )
         return Response(_detail(creation), status=status.HTTP_202_ACCEPTED)

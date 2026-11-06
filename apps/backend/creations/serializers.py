@@ -143,7 +143,6 @@ class CreationCreateSerializer(serializers.Serializer):
     text = serializers.CharField(required=False, allow_blank=True, max_length=1000)
     style = serializers.CharField(max_length=24)
     photo = serializers.ImageField()
-    rights_accepted = serializers.BooleanField(required=False, default=False)
 
 
 class EditRequestSerializer(serializers.Serializer):

@@ -210,7 +210,7 @@ Todo modelo herda `BaseModel` (`id` interno, `globalid` UUID, `created_at`, `upd
 | Entidade | Campos principais | Uso |
 |---|---|---|
 | `Creation` | user **ou** visitor, status, estilo, versão atual, excluída em | ● |
-| `CreationInput` | creation, pedido de alteração do cliente, foto (`Asset`, obrigatória), aceite dos direitos com data e IP | ● |
+| `CreationInput` | creation, pedido de alteração do cliente, foto (`Asset`, obrigatória), versão dos termos | ● |
 | `ImageVersion` | creation, parent (árvore de versões), origem (`text`, `photo`, `edit`), instrução, asset, tarefa | ● |
 | `ProviderTask` | creation, tipo, provedor, modelo, status, tentativas, próxima tentativa, prompt renderizado, versão do prompt, parâmetros, custo em USD, início e fim, erro, trava (`locked_until`) | ● |
 | `QuotaReservation` | ator, hash do IP, tipo, dia, estado (`reserved`, `consumed`, `released`), tarefa | ● |
@@ -660,7 +660,7 @@ Envio síncrono, melhor esforço e fora da transação, com modelos Django e `Em
 - CPF criptografado no nível do campo e mascarado na interface.
 - Logs sem dados pessoais: IPs e e-mails só com hash.
 - Exclusão de conta: anonimiza o usuário, aplica a retenção a criações sem pedido e preserva o que a obrigação fiscal exige.
-- Aceites de termos e de direitos sobre fotos ficam registrados com versão e data.
+- Aceites de termos ficam registrados com versão e data.
 - Fotos seguem para provedores no exterior, o que deve constar da política de privacidade.
 - **Parceiros futuros:** veem apenas nome e endereço para envio, por meio de serializers próprios.
 

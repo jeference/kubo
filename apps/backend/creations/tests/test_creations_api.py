@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from conftest import creation_payload, drain_worker, make_ready_creation
-from creations.models import Creation, ProviderTask, QuotaReservation
+from creations.models import ProviderTask, QuotaReservation
 
 
 def _create(client, **fields):
@@ -40,12 +40,6 @@ def test_invalid_style(visitor_client):
     assert response.data["code"] == "invalid_style"
 
 
-def test_photo_requires_rights_declaration(visitor_client):
-    response = _create(visitor_client, rights_accepted=False)
-    assert response.status_code == 422
-    assert response.data["code"] == "rights_required"
-
-
 def test_photo_without_request(visitor_client):
     response = _create(visitor_client, text="")
     assert response.status_code == 202, response.data
@@ -53,8 +47,6 @@ def test_photo_without_request(visitor_client):
     detail = visitor_client.get(f"/api/creations/{response.data['id']}/").data
     assert detail["status"] == "ready"
     assert detail["versions"][0]["origin"] == "photo"
-    creation = Creation.objects.get(globalid=response.data["id"])
-    assert creation.input.rights_accepted_at is not None
 
 
 def test_other_visitor_cannot_see_or_act(visitor_client, other_visitor_client, user_client):

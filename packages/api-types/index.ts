@@ -684,8 +684,6 @@ export interface components {
             style: string;
             /** Format: binary */
             photo: string;
-            /** @default false */
-            rights_accepted: boolean;
         };
         CreationDetail: {
             /** Format: uuid */
